@@ -17,24 +17,19 @@ const PCAN_ERROR_OK: u32 = 0x0000;
 
 #[repr(C)]
 struct TPCANMsg {
-    id: u32,
-    // !< 11/29-bit message identifier
+    id: u64,
     msgtype: u8,
-    // !< Type of the message
     len: u8,
-    // !< Data Length Code of the message (0..8)
-    data: [u8; 8], // !< Data of the message (DATA[0]..DATA[7])
+    data: [u8; 8],
 }
 
 
 #[repr(C)]
 struct TPCANTimestamp
 {
-    millis: u32,
-    // !< Base-value: milliseconds: 0.. 2^32-1
+    millis: u64,
     millis_overflow: u16,
-    // !< Roll-arounds of millis
-    micros: u16,             // !< Microseconds: 0..999
+    micros: u16,
 }
 
 
@@ -66,23 +61,20 @@ extern "C" {
     fn CAN_Uninitialize(channel: u16) -> u32;
 
     fn CAN_GetValue(channel: u16, parameter: u8, buffer: &i32, buffer_len: u16) -> u32;
-    fn CAN_Read(channel: u16, message_buffer: &TPCANMsg, timestamp_buffer: &TPCANTimestamp) -> u32;
+    fn CAN_Read(channel: u16, message_buffer: *mut TPCANMsg, timestamp_buffer: *mut TPCANTimestamp) -> u32;
 }
 
 
 pub fn run() {
     println!("Running an imposter...");
-    println!("Initialising CAN device...");
     unsafe {
         let status = CAN_Initialize(PCAN_USBBUS1, PCAN_BAUD_500K, 0, 0, 0);
-        println!("- status: {}", status);
+        println!("Initialized CAN device (0x{:x})", status);
     }
-    println!("Initialising all can devices...");
     let fd: i32 = 0;
     unsafe {
         let status = CAN_GetValue(PCAN_USBBUS1, PCAN_RECEIVE_EVENT, &fd, 4);
-        println!("- status: {}", status);
-        println!("- fd: {}", fd);
+        println!("Got file descriptor (0x{:x})", status);
     }
 
     let mut fdset: fd_set = unsafe { mem::zeroed() };
@@ -93,36 +85,27 @@ pub fn run() {
         FD_ZERO(&mut fdset2);
     }
 
-    /*
-
-		printf("  - R ID:%4x LEN:%1x DATA:%02x %02x %02x %02x %02x %02x %02x %02x\n",
-				(int) message.ID, (int) message.LEN, (int) message.DATA[0],
-				(int) message.DATA[1], (int) message.DATA[2],
-				(int) message.DATA[3], (int) message.DATA[4],
-				(int) message.DATA[5], (int) message.DATA[6],
-				(int) message.DATA[7]);
-	}
-
-*/
-
-
     while unsafe { select(fd + 1, &mut fdset, ptr::null_mut(), ptr::null_mut(), ptr::null_mut()) } > 0 {
         let mut message = TPCANMsg::new();
         let mut timestamp = TPCANTimestamp::new();
         unsafe {
+//            let message_rawptr = &mut message as *mut TPCANMsg;
+//            let timestamp_rawptr = &mut timestamp as *mut TPCANTimestamp;
             let status = CAN_Read(PCAN_USBBUS1, &mut message, &mut timestamp);
-            println!("- status: {}", status);
             if status != PCAN_ERROR_OK {
                 break;
             }
-            println!("- R ID:{:4x}", message.id);
+            print!("- {}-{}-{:03}: ", timestamp.millis_overflow, timestamp.millis, timestamp.micros);
+            println!("R ID:{:04X} TYPE:{:X} LEN:{:1X} DATA:{:02X} {:02X} {:02X} {:02X} {:02X} {:02X} {:02X} {:02X} ",
+                     message.id, message.msgtype, message.len,
+                     message.data[0], message.data[1], message.data[2], message.data[3],
+                     message.data[4], message.data[5], message.data[6], message.data[7]);
         }
 
 
     }
-    println!("Uninitialising all can devices...");
     unsafe {
         let status = CAN_Uninitialize(PCAN_NONEBUS);
-        println!("- status: {}", status);
+        println!("Uninitialized all can devices (0x{:x})", status);
     }
 }
