@@ -64,15 +64,28 @@ mod tests {
     use super::*;
 
     #[test]
-    fn returns_reponse_from_matching_stub() {
+    fn returns_reponse_from_first_matching_stub() {
         let mut imposter = Imposter::new();
         let stub = Stub::from_str(r#"{
-                     "match": { "id": "*" },
+                     "match": { "id": "0x201" },
+                     "response": { "id": "0x0201", "data": [ "0x12" ] }
+                   }"#).expect("");
+        imposter.add_stub(stub);
+        let stub = Stub::from_str(r#"{
+                     "match": { "id": "0x202" },
                      "response": { "id": "0x0202", "data": [ "0x12" ] }
                    }"#).expect("");
         imposter.add_stub(stub);
+        let stub = Stub::from_str(r#"{
+                     "match": { "id": "*" },
+                     "response": { "id": "0xFFFF", "data": [ "0x12" ] }
+                   }"#).expect("");
+        imposter.add_stub(stub);
 
-        let opt = imposter.response_for_message(&TPCANMessage::new());
+        let mut message = TPCANMessage::new();
+        message.id = 0x0202;
+
+        let opt = imposter.response_for_message(&message);
 
         assert_eq!(true, opt.is_some());
         if let Some(r) = opt {
