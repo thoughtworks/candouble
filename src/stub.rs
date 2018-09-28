@@ -51,6 +51,14 @@ impl Stub {
                 response.id = id;
             }
         }
+        if let Some(ref response_data) = self.response_template.data {
+            response.len = response_data.len() as u8;
+            for i in 0..(response_data.len()) {
+                if let Some(val) = Stub::num_from_string_u64(&response_data[i]) {
+                    response.data[i] = val as u8;
+                }
+            }
+        }
         response
     }
 
@@ -142,12 +150,16 @@ mod tests {
     fn creates_response_with_hex_id_and_data_from_template() {
         let stub = Stub::from_str(r#"{
                      "match": { "id": "*" },
-                     "response": { "id": "0x0102", "data": [ "0x17", "0x03" ] }
+                     "response": { "id": "0x0102", "data": [ "0x17", "SDF", "0x03" ] }
                    }"#).expect("");
 
         let response = stub.generate_response(&TPCANMessage::new());
 
         assert_eq!(0x0102, response.id);
+        assert_eq!(3, response.len);
+        assert_eq!(0x17, response.data[0]);
+        assert_eq!(0, response.data[1]); // TODO: skips unparsable numbers
+        assert_eq!(0x03, response.data[2]);
     }
 
 }

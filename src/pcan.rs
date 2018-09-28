@@ -103,7 +103,7 @@ impl PCAN {
         if status != PCAN_ERROR_OK {
             return Err("CAN_Read error"); // TODO: maybe include error code
         }
-        log(&format!("<= {}", &message));
+        log(&format!("<< {}", &message));
         Ok(message.clone())
     }
 
@@ -112,7 +112,7 @@ impl PCAN {
         if status != PCAN_ERROR_OK {
             return Err("CAN_Write error"); // TODO: maybe include error code
         }
-        log(&format!("=> {}", &message));
+        log(&format!(">> {}", &message));
         Ok(())
     }
 

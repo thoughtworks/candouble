@@ -35,9 +35,13 @@ impl Imposter {
 
         let pcan = PCAN::new().expect("Failed to initialize CAN device.");
         loop {
-            if let Ok(mut message) = pcan.receive() {
-                message.id += 1;
-                pcan.send(&message).expect("Failed to send CAN message.");
+            if let Ok(message) = pcan.receive() {
+                if let Some(response) = self.response_for_message(&message) {
+                    pcan.send(&response).expect("Failed to send CAN message.");
+                } else {
+                    println!("No stub for message.");
+                }
+
             }
         }
     }
@@ -64,7 +68,7 @@ mod tests {
         let mut imposter = Imposter::new();
         let stub = Stub::from_str(r#"{
                      "match": { "id": "*" },
-                     "response": { "id": "0x0202", "data": [ "12" ] }
+                     "response": { "id": "0x0202", "data": [ "0x12" ] }
                    }"#).expect("");
         imposter.add_stub(stub);
 
@@ -73,7 +77,6 @@ mod tests {
         assert_eq!(true, opt.is_some());
         if let Some(r) = opt {
             assert_eq!(0x202, r.id);
-//            assert_eq!(12, r.data[0]);
         }
 
 
