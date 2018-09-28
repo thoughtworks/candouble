@@ -20,18 +20,19 @@ const PCAN_ERROR_OK: u64 = 0x0000;
 extern "C" {
     fn CAN_Initialize(channel: u16, bitrate: u16, hw_type: u8, io_port: u64, interrupt: u16) -> u64;
     fn CAN_Uninitialize(channel: u16) -> u64;
-    fn CAN_GetValue(channel: u16, parameter: u8, buffer: &i32, buffer_len: u16) -> u64;
+    fn CAN_GetValue(channel: u16, parameter: u8, buffer: &i32, buffer_len: usize) -> u64;
     fn CAN_Read(channel: u16, message_buffer: *mut TPCANMessage, timestamp_buffer: *mut TPCANTimestamp) -> u64;
+    fn CAN_Write(channel: u16, message_buffer: *const TPCANMessage) -> u64;
 }
 
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub struct TPCANMessage {
-    id: u64,
-    message_type: u8,
-    len: u8,
-    data: [u8; 8],
+    pub id: u64,
+    pub message_type: u8,
+    pub len: u8,
+    pub data: [u8; 8],
 }
 
 
@@ -42,9 +43,9 @@ impl TPCANMessage {
 
     pub fn as_string(&self) -> String {
         let mut strrep = String::new();
-        strrep.push_str(&format!("<= ID:{:04X} LEN:{:1X} DATA:", self.id, self.len));
-        for i in 0..self.len {
-            strrep.push_str(&format!("{:02X} ", self.data[i as usize]));
+        strrep.push_str(&format!("ID:{:04X} LEN:{:1X} DATA:", self.id, self.len));
+        for i in 0..(self.len as usize) {
+            strrep.push_str(&format!("{:02X} ", self.data[i]));
         }
         strrep
     }
@@ -54,9 +55,9 @@ impl TPCANMessage {
 #[repr(C)]
 pub struct TPCANTimestamp
 {
-    millis: u64,
-    millis_overflow: u16,
-    micros: u16,
+    pub millis: u64,
+    pub millis_overflow: u16,
+    pub micros: u16,
 }
 
 impl TPCANTimestamp {
@@ -79,7 +80,7 @@ impl PCAN {
         let status = unsafe { CAN_Initialize(PCAN_USBBUS1, PCAN_BAUD_500K, 0, 0, 0) };
         log(&format!("Initialized CAN device (0x{:x})", status));
         let fd: i32 = 0;
-        let status = unsafe { CAN_GetValue(PCAN_USBBUS1, PCAN_RECEIVE_EVENT, &fd, mem::size_of::<i32>() as u16) };
+        let status = unsafe { CAN_GetValue(PCAN_USBBUS1, PCAN_RECEIVE_EVENT, &fd, mem::size_of::<i32>()) };
         log(&format!("Got file descriptor for CAN device (0x{:x})", status));
         PCAN {
             fd
@@ -98,20 +99,18 @@ impl PCAN {
             let mut timestamp = TPCANTimestamp::new();
             let status = unsafe { CAN_Read(PCAN_USBBUS1, &mut message, &mut timestamp) };
             if status == PCAN_ERROR_OK {
-                let mut output = String::new();
-                output.push_str(&timestamp.as_string());
-                output.push_str(&message.as_string());
-                log(&output);
+                log(&format!("<= {}", &message.as_string()));
                 return Some(message.clone());
             }
         }
         None
     }
 
-    pub fn send(&self, message: &TPCANMessage) {
-
+    pub fn send(&self, message: &TPCANMessage) -> bool {
+        log(&format!("=> {}", &message.as_string()));
+        let status = unsafe { CAN_Write(PCAN_USBBUS1, message) };
+        (status == PCAN_ERROR_OK)
     }
-
 
     fn get_fd_set(&self) -> fd_set {
         let mut fds: fd_set = unsafe { mem::zeroed() };

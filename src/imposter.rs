@@ -5,8 +5,9 @@ pub fn run() {
 
     let pcan = PCAN::new();
     loop {
-        if let Some(message) = pcan.receive() {
-
+        if let Some(mut message) = pcan.receive() {
+            message.id += 1;
+            pcan.send(&message);
         }
 
     }
