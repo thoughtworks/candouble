@@ -13,6 +13,7 @@ extern crate maplit;
 
 pub mod imposter;
 pub mod pcan;
+pub mod pcan_constants;
 
 pub fn run()
 {

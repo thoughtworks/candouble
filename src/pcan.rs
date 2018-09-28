@@ -1,19 +1,11 @@
+use std::fmt;
 use std::mem;
 use std::ptr;
 use libc::select;
 use libc::fd_set;
 use libc::FD_ZERO;
 use libc::FD_SET;
-
-
-const PCAN_NONEBUS: u16 = 0x00;
-const PCAN_USBBUS1: u16 = 0x51;
-
-const PCAN_BAUD_500K: u16 = 0x001C;
-
-const PCAN_RECEIVE_EVENT: u8 = 0x03;
-
-const PCAN_ERROR_OK: u64 = 0x0000;
+use pcan_constants::*;
 
 
 #[link(name = "PCBUSB")]
@@ -35,19 +27,19 @@ pub struct TPCANMessage {
     pub data: [u8; 8],
 }
 
-
 impl TPCANMessage {
     pub fn new() -> TPCANMessage {
         unsafe { mem::zeroed() }
     }
+}
 
-    pub fn as_string(&self) -> String {
-        let mut strrep = String::new();
-        strrep.push_str(&format!("ID:{:04X} LEN:{:1X} DATA:", self.id, self.len));
+impl fmt::Display for TPCANMessage {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut data_str = String::new();
         for i in 0..(self.len as usize) {
-            strrep.push_str(&format!("{:02X} ", self.data[i]));
+            data_str.push_str(&format!("{:02X} ", self.data[i]));
         }
-        strrep
+        write!(f, "ID:{:04X} LEN:{:1X} DATA: {}", self.id, self.len, data_str)
     }
 }
 
@@ -64,11 +56,14 @@ impl TPCANTimestamp {
     pub fn new() -> TPCANTimestamp {
         unsafe { mem::zeroed() }
     }
+}
 
-    pub fn as_string(&self) -> String {
-        format!("{}-{}-{:03}: ", self.millis_overflow, self.millis, self.micros)
+impl fmt::Display for TPCANTimestamp {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}-{}-{:03}: ", self.millis_overflow, self.millis, self.micros)
     }
 }
+
 
 
 pub struct PCAN {
@@ -103,7 +98,7 @@ impl PCAN {
         if status != PCAN_ERROR_OK {
             return Err("CAN_Read error"); // TODO: maybe include error code
         }
-        log(&format!("<= {}", &message.as_string()));
+        log(&format!("<= {}", &message));
         Ok(message.clone())
     }
 
@@ -112,14 +107,14 @@ impl PCAN {
         if status != PCAN_ERROR_OK {
             return Err("CAN_Write error"); // TODO: maybe include error code
         }
-        log(&format!("=> {}", &message.as_string()));
+        log(&format!("=> {}", &message));
         Ok(())
     }
 
     fn get_fd_set(&self) -> fd_set {
         let mut fds: fd_set = unsafe { mem::zeroed() };
         unsafe {
-            FD_ZERO(&mut fds);
+            FD_ZERO(&mut fds); // just for the looks, it's zero'd anyway
             FD_SET(self.fd, &mut fds);
         }
         fds
