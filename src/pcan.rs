@@ -92,24 +92,28 @@ impl PCAN {
         log(&format!("Uninitialized all can devices (0x{:x})", status));
     }
 
-    pub fn receive(&self) -> Option<TPCANMessage> {
+    pub fn receive(&self) -> Result<TPCANMessage, &'static str> {
         let mut fds = self.get_fd_set();
-        if unsafe { select(self.fd + 1, &mut fds, ptr::null_mut(), ptr::null_mut(), ptr::null_mut()) } > 0 {
-            let mut message = TPCANMessage::new();
-            let mut timestamp = TPCANTimestamp::new();
-            let status = unsafe { CAN_Read(PCAN_USBBUS1, &mut message, &mut timestamp) };
-            if status == PCAN_ERROR_OK {
-                log(&format!("<= {}", &message.as_string()));
-                return Some(message.clone());
-            }
+        if unsafe { select(self.fd + 1, &mut fds, ptr::null_mut(), ptr::null_mut(), ptr::null_mut()) } == 0 {
+            return Err("select returned 0 (timeout?)");
         }
-        None
+        let mut message = TPCANMessage::new();
+        let mut timestamp = TPCANTimestamp::new();
+        let status = unsafe { CAN_Read(PCAN_USBBUS1, &mut message, &mut timestamp) };
+        if status != PCAN_ERROR_OK {
+            return Err("CAN_Read error"); // TODO: maybe include error code
+        }
+        log(&format!("<= {}", &message.as_string()));
+        Ok(message.clone())
     }
 
-    pub fn send(&self, message: &TPCANMessage) -> bool {
-        log(&format!("=> {}", &message.as_string()));
+    pub fn send(&self, message: &TPCANMessage) -> Result<(), &'static str> {
         let status = unsafe { CAN_Write(PCAN_USBBUS1, message) };
-        (status == PCAN_ERROR_OK)
+        if status != PCAN_ERROR_OK {
+            return Err("CAN_Write error"); // TODO: maybe include error code
+        }
+        log(&format!("=> {}", &message.as_string()));
+        Ok(())
     }
 
     fn get_fd_set(&self) -> fd_set {
@@ -120,7 +124,6 @@ impl PCAN {
         }
         fds
     }
-
 }
 
 
