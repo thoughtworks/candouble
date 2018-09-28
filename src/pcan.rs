@@ -71,20 +71,25 @@ pub struct PCAN {
 }
 
 impl PCAN {
-    pub fn new() -> PCAN {
+    pub fn new() -> Result<PCAN, &'static str> {
         let status = unsafe { CAN_Initialize(PCAN_USBBUS1, PCAN_BAUD_500K, 0, 0, 0) };
         log(&format!("Initialized CAN device (0x{:x})", status));
+        if status != PCAN_ERROR_OK {
+            return Err("CAN_Initialize error");
+        }
         let fd: i32 = 0;
         let status = unsafe { CAN_GetValue(PCAN_USBBUS1, PCAN_RECEIVE_EVENT, &fd, mem::size_of::<i32>()) };
         log(&format!("Got file descriptor for CAN device (0x{:x})", status));
-        PCAN {
-            fd
+        if status != PCAN_ERROR_OK {
+            return Err("CAN_GetValue error when retrieving file descriptor for reading");
         }
+        Ok(PCAN { fd })
     }
 
     pub fn drop(&mut self) {
         let status = unsafe { CAN_Uninitialize(PCAN_NONEBUS) };
         log(&format!("Uninitialized all can devices (0x{:x})", status));
+        // no return value, if it fails, it fails...
     }
 
     pub fn receive(&self) -> Result<TPCANMessage, &'static str> {
