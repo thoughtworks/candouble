@@ -32,16 +32,40 @@ impl Stub {
         Stub::from_str(&contents)
     }
 
-    pub fn matches(&self, message: &TPCANMessage) -> bool {
+    pub fn matches_message(&self, message: &TPCANMessage) -> bool {
         if let Some(ref match_id) = self.match_template.id {
             // TODO: the next few lines will not allow also checking data later
-            if let Ok(num) = match_id.parse::<u64>() {
+            if let Some(num) = Stub::num_from_string_u64(match_id) {
                 return message.id == num;
             } else if match_id == "*" {
                 return true;
             }
         }
         false
+    }
+
+    pub fn generate_response(&self, _message: &TPCANMessage) -> TPCANMessage {
+        let mut response = TPCANMessage::new();
+        if let Some(ref response_id) = self.response_template.id {
+            if let Some(id) = Stub::num_from_string_u64(response_id) {
+                response.id = id;
+            }
+        }
+        response
+    }
+
+
+    fn num_from_string_u64(string :&str) -> Option<u64> {
+        if string.starts_with("0x") {
+            if let Ok(n) = u64::from_str_radix(&string[2..], 16) {
+                return Some(n);
+            }
+        } else {
+            if let Ok(n) = string.parse::<u64>() {
+                return Some(n);
+            }
+        }
+        None
     }
 }
 
@@ -72,7 +96,20 @@ mod tests {
         let mut message = TPCANMessage::new();
         message.id = 0101;
 
-        assert_eq!(true, stub.matches(&message));
+        assert_eq!(true, stub.matches_message(&message));
+    }
+
+    #[test]
+    fn matches_if_literal_hex_id_is_same() {
+        let stub = Stub::from_str(r#"{
+                     "match": { "id": "0x0101" },
+                     "response": { }
+                   }"#).expect("");
+
+        let mut message = TPCANMessage::new();
+        message.id = 0x0101;
+
+        assert_eq!(true, stub.matches_message(&message));
     }
 
     #[test]
@@ -85,7 +122,7 @@ mod tests {
         let mut message = TPCANMessage::new();
         message.id = 0102;
 
-        assert_eq!(false, stub.matches(&message));
+        assert_eq!(false, stub.matches_message(&message));
     }
 
     #[test]
@@ -98,8 +135,19 @@ mod tests {
         let mut message = TPCANMessage::new();
         message.id = 0102;
 
-        assert_eq!(true, stub.matches(&message));
+        assert_eq!(true, stub.matches_message(&message));
     }
 
+    #[test]
+    fn creates_response_with_hex_id_and_data_from_template() {
+        let stub = Stub::from_str(r#"{
+                     "match": { "id": "*" },
+                     "response": { "id": "0x0102", "data": [ "0x17", "0x03" ] }
+                   }"#).expect("");
+
+        let response = stub.generate_response(&TPCANMessage::new());
+
+        assert_eq!(0x0102, response.id);
+    }
 
 }
