@@ -34,30 +34,17 @@ impl Stub {
 
     pub fn matches_message(&self, message: &TPCANMessage) -> bool {
         if let Some(ref match_id) = self.match_template.id {
-            // TODO: There must be a nicer construct than if else for this
-            if let Some(num) = Stub::num_from_string_u64(match_id) {
-                if message.id != num {
-                    return false;
-                }
-            } else if match_id == "*" {
-            } else {
+            if Stub::matches_value(match_id, message.id) == false {
                 return false;
             }
         }
-
         if let Some(ref match_data) = self.match_template.data {
             for i in 0..match_data.len() {
-                if let Some(num) = Stub::num_from_string_u64(&match_data[i]) {
-                    if message.data[i] != num as u8 {
-                        return false;
-                    }
-                } else if match_data[i] == "*" {
-                } else {
+                if Stub::matches_value(&match_data[i], message.data[i] as u64) == false {
                     return false;
                 }
             }
         }
-
         true
     }
 
@@ -79,8 +66,17 @@ impl Stub {
         response
     }
 
+    fn matches_value(pattern: &str, value: u64) -> bool {
+        if let Some(num) = Stub::num_from_string_u64(pattern) {
+            return value == num;
+        } else if pattern == "*" {
+            return true;
+        } else {
+            return false;
+        }
+    }
 
-    fn num_from_string_u64(string :&str) -> Option<u64> {
+    fn num_from_string_u64(string: &str) -> Option<u64> {
         if string.starts_with("0x") {
             if let Ok(n) = u64::from_str_radix(&string[2..], 16) {
                 return Some(n);
@@ -250,5 +246,4 @@ mod tests {
         assert_eq!(0, response.data[1]); // TODO: skips unparsable numbers
         assert_eq!(0x03, response.data[2]);
     }
-
 }
