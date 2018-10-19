@@ -5,7 +5,9 @@ use libc::select;
 use libc::fd_set;
 use libc::FD_ZERO;
 use libc::FD_SET;
-use pcan_constants::*;
+
+pub mod constants;
+use self::constants::*;
 
 
 #[link(name = "PCBUSB")]
