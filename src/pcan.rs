@@ -31,6 +31,17 @@ impl TPCANMessage {
     pub fn new() -> TPCANMessage {
         unsafe { mem::zeroed() }
     }
+
+    pub fn with_content(id: u64, message_type: u8, data: &[u8]) -> TPCANMessage {
+        let mut m = TPCANMessage::new();
+        m.id = id;
+        m.message_type = message_type;
+        m.len = data.len() as u8;
+        for i in 0..data.len() {
+            m.data[i] = data[i];
+        }
+        m
+    }
 }
 
 impl fmt::Display for TPCANMessage {
@@ -129,4 +140,20 @@ impl PCAN {
 
 fn log(message: &str) {
     println!("{}", message);
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn creates_message_with_content() {
+        let m = TPCANMessage::with_content(0x101, 7, &[0x20, 0x30]);
+
+        assert_eq!(0x101, m.id);
+        assert_eq!(7, m.message_type);
+        assert_eq!(2, m.len);
+        assert_eq!([0x20, 0x30, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], m.data);
+    }
 }

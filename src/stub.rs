@@ -34,14 +34,31 @@ impl Stub {
 
     pub fn matches_message(&self, message: &TPCANMessage) -> bool {
         if let Some(ref match_id) = self.match_template.id {
-            // TODO: the next few lines will not allow also checking data later
+            // TODO: There must be a nicer construct than if else for this
             if let Some(num) = Stub::num_from_string_u64(match_id) {
-                return message.id == num;
+                if message.id != num {
+                    return false;
+                }
             } else if match_id == "*" {
-                return true;
+            } else {
+                return false;
             }
         }
-        false
+
+        if let Some(ref match_data) = self.match_template.data {
+            for i in 0..match_data.len() {
+                if let Some(num) = Stub::num_from_string_u64(&match_data[i]) {
+                    if message.data[i] != num as u8 {
+                        return false;
+                    }
+                } else if match_data[i] == "*" {
+                } else {
+                    return false;
+                }
+            }
+        }
+
+        true
     }
 
     pub fn generate_response(&self, _message: &TPCANMessage) -> TPCANMessage {
@@ -97,12 +114,12 @@ mod tests {
     #[test]
     fn matches_if_literal_id_is_same() {
         let stub = Stub::from_str(r#"{
-                     "match": { "id": "0101" },
+                     "match": { "id": "0x101" },
                      "response": { }
                    }"#).expect("");
 
         let mut message = TPCANMessage::new();
-        message.id = 0101;
+        message.id = 0x101;
 
         assert_eq!(true, stub.matches_message(&message));
     }
@@ -110,12 +127,12 @@ mod tests {
     #[test]
     fn matches_if_literal_hex_id_is_same() {
         let stub = Stub::from_str(r#"{
-                     "match": { "id": "0x0101" },
+                     "match": { "id": "0x101" },
                      "response": { }
                    }"#).expect("");
 
         let mut message = TPCANMessage::new();
-        message.id = 0x0101;
+        message.id = 0x101;
 
         assert_eq!(true, stub.matches_message(&message));
     }
@@ -123,12 +140,12 @@ mod tests {
     #[test]
     fn does_not_match_if_literal_id_is_not_same() {
         let stub = Stub::from_str(r#"{
-                     "match": { "id": "0101" },
+                     "match": { "id": "0x101" },
                      "response": { }
                    }"#).expect("");
 
         let mut message = TPCANMessage::new();
-        message.id = 0102;
+        message.id = 0x102;
 
         assert_eq!(false, stub.matches_message(&message));
     }
@@ -141,9 +158,81 @@ mod tests {
                    }"#).expect("");
 
         let mut message = TPCANMessage::new();
-        message.id = 0102;
+        message.id = 0x102;
 
         assert_eq!(true, stub.matches_message(&message));
+    }
+
+    #[test]
+    fn matches_if_literal_data_is_the_same() {
+        let stub = Stub::from_str(r#"{
+                     "match": { "data": ["0x01", "0x02"] },
+                     "response": { }
+                   }"#).expect("");
+
+        let message = TPCANMessage::with_content(0x101, 0, &[0x01, 0x02, 0x03]);
+
+        assert_eq!(true, stub.matches_message(&message));
+    }
+
+    #[test]
+    fn does_not_match_if_literal_data_is_not_the_same() {
+        let stub = Stub::from_str(r#"{
+                     "match": { "data": ["0x01", "0x02"] },
+                     "response": { }
+                   }"#).expect("");
+
+        let message = TPCANMessage::with_content(0x101, 0, &[0x01, 0x03]);
+
+        assert_eq!(false, stub.matches_message(&message));
+    }
+
+    #[test]
+    fn matches_if_asterisk_or_literal_data_is_the_same() {
+        let stub = Stub::from_str(r#"{
+                     "match": { "data": ["*", "0x02"] },
+                     "response": { }
+                   }"#).expect("");
+
+        let message = TPCANMessage::with_content(0x101, 0, &[0x01, 0x02, 0x03]);
+
+        assert_eq!(true, stub.matches_message(&message));
+    }
+
+    #[test]
+    fn matches_when_id_and_data_match() {
+        let stub = Stub::from_str(r#"{
+                     "match": { "id": "0x101", "data": ["*"] },
+                     "response": { }
+                   }"#).expect("");
+
+        let message = TPCANMessage::with_content(0x101, 0, &[0x01]);
+
+        assert_eq!(true, stub.matches_message(&message));
+    }
+
+    #[test]
+    fn does_not_match_when_id_matches_but_data_does_not() {
+        let stub = Stub::from_str(r#"{
+                     "match": { "id": "0x101", "data": ["0x02"] },
+                     "response": { }
+                   }"#).expect("");
+
+        let message = TPCANMessage::with_content(0x101, 0, &[0x01]);
+
+        assert_eq!(false, stub.matches_message(&message));
+    }
+
+    #[test]
+    fn does_not_match_when_data_matches_but_id_does_not() {
+        let stub = Stub::from_str(r#"{
+                     "match": { "id": "0x102", "data": ["*"] },
+                     "response": { }
+                   }"#).expect("");
+
+        let message = TPCANMessage::with_content(0x101, 0, &[0x01]);
+
+        assert_eq!(false, stub.matches_message(&message));
     }
 
     #[test]

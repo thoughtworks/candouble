@@ -89,7 +89,7 @@ mod tests {
 
         assert_eq!(true, opt.is_some());
         if let Some(r) = opt {
-            assert_eq!(0x202, r.id);
+            assert_eq!(0x0202, r.id);
         }
 
 
