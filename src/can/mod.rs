@@ -1,11 +1,11 @@
 use std::fmt;
 use std::mem;
 
-#[cfg(not(target_os = "macos"))]
+#[cfg(not(feature = "pcan"))]
 pub mod dummy;
-#[cfg(target_os = "macos")]
+#[cfg(feature = "pcan")]
 pub mod peak;
-#[cfg(target_os = "macos")]
+#[cfg(feature = "pcan")]
 pub mod pcbusb;
 
 
@@ -52,12 +52,12 @@ pub trait CANAdaptor {
 }
 
 
-#[cfg(target_os = "macos")]
+#[cfg(feature = "pcan")]
 pub fn create_adaptor() -> Result<Box<CANAdaptor>, &'static str> {
     self::peak::PeakAdaptor::new()
 }
 
-#[cfg(not(target_os = "macos"))]
+#[cfg(not(feature = "pcan"))]
 pub fn create_adaptor() -> Result<Box<CANAdaptor>, &'static str> {
     self::dummy::DummyAdaptor::new()
 }
