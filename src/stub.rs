@@ -1,7 +1,7 @@
 use std::io::Read;
-use serde_json;
 use std::fs::File;
-use pcan::pcbusb::TPCANMessage;
+use serde_json;
+use can::CANMessage;
 
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -32,7 +32,7 @@ impl Stub {
         Stub::from_str(&contents)
     }
 
-    pub fn matches_message(&self, message: &TPCANMessage) -> bool {
+    pub fn matches_message(&self, message: &CANMessage) -> bool {
         if let Some(ref match_id) = self.match_template.id {
             if Stub::matches_value(match_id, message.id) == false {
                 return false;
@@ -48,8 +48,8 @@ impl Stub {
         true
     }
 
-    pub fn generate_response(&self, _message: &TPCANMessage) -> TPCANMessage {
-        let mut response = TPCANMessage::new();
+    pub fn generate_response(&self, _message: &CANMessage) -> CANMessage {
+        let mut response = CANMessage::new();
         if let Some(ref response_id) = self.response_template.id {
             if let Some(id) = Stub::num_from_string_u64(response_id) {
                 response.id = id;
@@ -94,7 +94,7 @@ impl Stub {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use pcan::pcbusb::TPCANMessage;
+    use can::CANMessage;
 
     #[test]
     fn loads_stub_from_json_file() {
@@ -114,7 +114,7 @@ mod tests {
                      "response": { }
                    }"#).expect("");
 
-        let mut message = TPCANMessage::new();
+        let mut message = CANMessage::new();
         message.id = 0x101;
 
         assert_eq!(true, stub.matches_message(&message));
@@ -127,7 +127,7 @@ mod tests {
                      "response": { }
                    }"#).expect("");
 
-        let mut message = TPCANMessage::new();
+        let mut message = CANMessage::new();
         message.id = 0x101;
 
         assert_eq!(true, stub.matches_message(&message));
@@ -140,7 +140,7 @@ mod tests {
                      "response": { }
                    }"#).expect("");
 
-        let mut message = TPCANMessage::new();
+        let mut message = CANMessage::new();
         message.id = 0x102;
 
         assert_eq!(false, stub.matches_message(&message));
@@ -153,7 +153,7 @@ mod tests {
                      "response": { }
                    }"#).expect("");
 
-        let mut message = TPCANMessage::new();
+        let mut message = CANMessage::new();
         message.id = 0x102;
 
         assert_eq!(true, stub.matches_message(&message));
@@ -166,7 +166,7 @@ mod tests {
                      "response": { }
                    }"#).expect("");
 
-        let message = TPCANMessage::with_content(0x101, 0, &[0x01, 0x02, 0x03]);
+        let message = CANMessage::with_content(0x101, 0, &[0x01, 0x02, 0x03]);
 
         assert_eq!(true, stub.matches_message(&message));
     }
@@ -178,7 +178,7 @@ mod tests {
                      "response": { }
                    }"#).expect("");
 
-        let message = TPCANMessage::with_content(0x101, 0, &[0x01, 0x03]);
+        let message = CANMessage::with_content(0x101, 0, &[0x01, 0x03]);
 
         assert_eq!(false, stub.matches_message(&message));
     }
@@ -190,7 +190,7 @@ mod tests {
                      "response": { }
                    }"#).expect("");
 
-        let message = TPCANMessage::with_content(0x101, 0, &[0x01, 0x02, 0x03]);
+        let message = CANMessage::with_content(0x101, 0, &[0x01, 0x02, 0x03]);
 
         assert_eq!(true, stub.matches_message(&message));
     }
@@ -202,7 +202,7 @@ mod tests {
                      "response": { }
                    }"#).expect("");
 
-        let message = TPCANMessage::with_content(0x101, 0, &[0x01]);
+        let message = CANMessage::with_content(0x101, 0, &[0x01]);
 
         assert_eq!(true, stub.matches_message(&message));
     }
@@ -214,7 +214,7 @@ mod tests {
                      "response": { }
                    }"#).expect("");
 
-        let message = TPCANMessage::with_content(0x101, 0, &[0x01]);
+        let message = CANMessage::with_content(0x101, 0, &[0x01]);
 
         assert_eq!(false, stub.matches_message(&message));
     }
@@ -226,7 +226,7 @@ mod tests {
                      "response": { }
                    }"#).expect("");
 
-        let message = TPCANMessage::with_content(0x101, 0, &[0x01]);
+        let message = CANMessage::with_content(0x101, 0, &[0x01]);
 
         assert_eq!(false, stub.matches_message(&message));
     }
@@ -238,7 +238,7 @@ mod tests {
                      "response": { "id": "0x0102", "data": [ "0x17", "SDF", "0x03" ] }
                    }"#).expect("");
 
-        let response = stub.generate_response(&TPCANMessage::new());
+        let response = stub.generate_response(&CANMessage::new());
 
         assert_eq!(0x0102, response.id);
         assert_eq!(3, response.len);

@@ -8,7 +8,7 @@ extern crate serde_json;
 
 pub mod imposter;
 pub mod stub;
-pub mod pcan;
+pub mod can;
 
 
 pub fn run(input_files: Vec<String>)

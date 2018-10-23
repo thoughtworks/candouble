@@ -1,7 +1,7 @@
-use pcan::PCAN;
-use stub::Stub;
 use std::io::Error;
-use pcan::pcbusb::TPCANMessage;
+use can::create_adaptor;
+use can::CANMessage;
+use stub::Stub;
 
 
 pub struct Imposter {
@@ -33,7 +33,7 @@ impl Imposter {
     pub fn run(&mut self) {
         println!("Running an imposter...");
 
-        let pcan = PCAN::new().expect("Failed to initialize CAN device.");
+        let pcan = create_adaptor().expect("Failed to initialize CAN device.");
         loop {
             if let Ok(message) = pcan.receive() {
                 if let Some(response) = self.response_for_message(&message) {
@@ -47,7 +47,7 @@ impl Imposter {
     }
 
 
-    pub fn response_for_message(&self, message: &TPCANMessage) -> Option<TPCANMessage> {
+    pub fn response_for_message(&self, message: &CANMessage) -> Option<CANMessage> {
         for i in 0..(self.stubs.len()) {
             let s = &self.stubs[i];
             if s.matches_message(message) {
@@ -82,7 +82,7 @@ mod tests {
                    }"#).expect("");
         imposter.add_stub(stub);
 
-        let mut message = TPCANMessage::new();
+        let mut message = CANMessage::new();
         message.id = 0x0202;
 
         let opt = imposter.response_for_message(&message);
