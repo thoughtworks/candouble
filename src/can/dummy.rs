@@ -4,6 +4,7 @@ use can::{CANMessage, CANAdaptor};
 pub struct DummyAdaptor {
 }
 
+
 impl DummyAdaptor {
     pub fn new() -> Result<Box<CANAdaptor>, &'static str> {
         Ok(Box::new(DummyAdaptor {}))
@@ -11,6 +12,7 @@ impl DummyAdaptor {
 
     pub fn drop(&mut self) {}
 }
+
 
 impl CANAdaptor for DummyAdaptor {
 

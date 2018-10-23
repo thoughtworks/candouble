@@ -26,6 +26,7 @@ pub struct PeakAdaptor {
     fd: i32,
 }
 
+
 impl PeakAdaptor {
     pub fn new() -> Result<Box<CANAdaptor>, &'static str> {
         let status = unsafe { CAN_Initialize(PCAN_USBBUS1, PCAN_BAUD_500K, 0, 0, 0) };
@@ -58,6 +59,7 @@ impl PeakAdaptor {
     }
 
 }
+
 
 impl CANAdaptor for PeakAdaptor {
     fn receive(&self) -> Result<CANMessage, &'static str> {

@@ -1,13 +1,10 @@
 use std::fmt;
 use std::mem;
 
-
 #[cfg(not(target_os = "macos"))]
 pub mod dummy;
-
 #[cfg(target_os = "macos")]
 pub mod peak;
-
 #[cfg(target_os = "macos")]
 pub mod pcbusb;
 
