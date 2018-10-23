@@ -3,7 +3,6 @@ name = "speedboat"
 version = "0.1.0"
 authors = ["Erik Doernenburg <erik@thoughtworks.com>"]
 build = "build.rs"
-links = "libPCBUSB-0.8"  # TODO: skip for Linux builds
 
 [dependencies]
 serde = "1.0.76"

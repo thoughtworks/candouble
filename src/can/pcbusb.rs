@@ -3,7 +3,7 @@ use can::CANMessage;
 
 /* functions defined in libPCBUSB, which we use on the Mac */
 
-#[link]
+#[link(name="PCBUSB.0.8")]
 extern "C" {
     pub fn CAN_Initialize(channel: u16, bitrate: u16, hw_type: u8, io_port: u64, interrupt: u16) -> u64;
     pub fn CAN_Uninitialize(channel: u16) -> u64;
