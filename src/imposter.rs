@@ -1,6 +1,7 @@
 use std::io::Error;
 use can::create_adaptor;
 use can::CANMessage;
+use can::CANAdaptor;
 use stub::Stub;
 
 
@@ -33,19 +34,22 @@ impl Imposter {
     pub fn run(&mut self) {
         println!("Running an imposter...");
 
-        let pcan = create_adaptor().expect("Failed to initialize CAN device.");
+        let adaptor = create_adaptor().expect("Failed to initialize CAN device.");
         loop {
-            if let Ok(message) = pcan.receive() {
-                if let Some(response) = self.response_for_message(&message) {
-                    pcan.send(&response).expect("Failed to send CAN message.");
-                } else {
-                    println!("No stub for message.");
-                }
-
+            match adaptor.receive() {
+                Ok(message) => self.handle_message(&adaptor, &message),
+                Err(errmsg) => { println!("Error: {}", errmsg); break; }
             }
         }
     }
 
+    pub fn handle_message(&self, adaptor: &Box<CANAdaptor>, message: &CANMessage) {
+        if let Some(response) = self.response_for_message(&message) {
+            adaptor.send(&response).expect("Failed to send CAN message.");
+        } else {
+            println!("No stub for message.");
+        }
+    }
 
     pub fn response_for_message(&self, message: &CANMessage) -> Option<CANMessage> {
         for i in 0..(self.stubs.len()) {
