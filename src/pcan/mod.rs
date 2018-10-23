@@ -6,28 +6,9 @@ use libc::fd_set;
 use libc::FD_ZERO;
 use libc::FD_SET;
 
-pub mod constants;
-use self::constants::*;
+pub mod pcbusb;
+use self::pcbusb::*;
 
-
-#[link(name = "PCBUSB")]
-extern "C" {
-    fn CAN_Initialize(channel: u16, bitrate: u16, hw_type: u8, io_port: u64, interrupt: u16) -> u64;
-    fn CAN_Uninitialize(channel: u16) -> u64;
-    fn CAN_GetValue(channel: u16, parameter: u8, buffer: &i32, buffer_len: usize) -> u64;
-    fn CAN_Read(channel: u16, message_buffer: *mut TPCANMessage, timestamp_buffer: *mut TPCANTimestamp) -> u64;
-    fn CAN_Write(channel: u16, message_buffer: *const TPCANMessage) -> u64;
-}
-
-
-#[repr(C)]
-#[derive(Copy, Clone, Debug)]
-pub struct TPCANMessage {
-    pub id: u64,
-    pub message_type: u8,
-    pub len: u8,
-    pub data: [u8; 8],
-}
 
 impl TPCANMessage {
     pub fn new() -> TPCANMessage {
@@ -56,14 +37,6 @@ impl fmt::Display for TPCANMessage {
     }
 }
 
-
-#[repr(C)]
-pub struct TPCANTimestamp
-{
-    pub millis: u64,
-    pub millis_overflow: u16,
-    pub micros: u16,
-}
 
 impl TPCANTimestamp {
     pub fn new() -> TPCANTimestamp {

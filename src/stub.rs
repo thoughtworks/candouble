@@ -1,7 +1,7 @@
 use std::io::Read;
 use serde_json;
 use std::fs::File;
-use pcan::TPCANMessage;
+use pcan::pcbusb::TPCANMessage;
 
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -94,7 +94,7 @@ impl Stub {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use pcan::TPCANMessage;
+    use pcan::pcbusb::TPCANMessage;
 
     #[test]
     fn loads_stub_from_json_file() {

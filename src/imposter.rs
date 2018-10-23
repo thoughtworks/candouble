@@ -1,7 +1,7 @@
 use pcan::PCAN;
 use stub::Stub;
 use std::io::Error;
-use pcan::TPCANMessage;
+use pcan::pcbusb::TPCANMessage;
 
 
 pub struct Imposter {

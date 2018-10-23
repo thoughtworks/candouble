@@ -1,4 +1,26 @@
 
+/* structs used as argument to functions */
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug)]
+pub struct TPCANMessage {
+    pub id: u64,
+    pub message_type: u8,
+    pub len: u8,
+    pub data: [u8; 8],
+}
+
+#[repr(C)]
+pub struct TPCANTimestamp
+{
+    pub millis: u64,
+    pub millis_overflow: u16,
+    pub micros: u16,
+}
+
+
+/* constants used as arguments to functions */
+
 pub const PCAN_NONEBUS: u16 = 0x00;
 pub const PCAN_USBBUS1: u16 = 0x51;
 
@@ -47,3 +69,15 @@ pub const PCAN_ERROR_ILLDATA     : u64 = 0x20000; // Invalid data, function, or 
 pub const PCAN_ERROR_CAUTION     : u64 = 0x2000000; // An operation was successfully carried out, however, irregularities were registered
 pub const PCAN_ERROR_INITIALIZE  : u64 = 0x4000000; // Channel is not initialized [Value was changed from 0x40000 to 0x4000000]
 pub const PCAN_ERROR_ILLOPERATION: u64 = 0x8000000; // Invalid operation [Value was changed from 0x80000 to 0x8000000]
+
+
+
+/* functions defined in native library, libPCBUSB */
+
+extern "C" {
+    pub fn CAN_Initialize(channel: u16, bitrate: u16, hw_type: u8, io_port: u64, interrupt: u16) -> u64;
+    pub fn CAN_Uninitialize(channel: u16) -> u64;
+    pub fn CAN_GetValue(channel: u16, parameter: u8, buffer: &i32, buffer_len: usize) -> u64;
+    pub fn CAN_Read(channel: u16, message_buffer: *mut TPCANMessage, timestamp_buffer: *mut TPCANTimestamp) -> u64;
+    pub fn CAN_Write(channel: u16, message_buffer: *const TPCANMessage) -> u64;
+}
