@@ -1,9 +1,15 @@
 use std::fmt;
 use std::mem;
 
-pub mod pcbusb;
+
+#[cfg(not(target_os = "macos"))]
 pub mod dummy;
+
+#[cfg(target_os = "macos")]
 pub mod peak;
+
+#[cfg(target_os = "macos")]
+pub mod pcbusb;
 
 
 #[repr(C)]  // TODO: this is here because of the Peak library; let's see what happens on Linux...
@@ -51,12 +57,12 @@ pub trait CANAdaptor {
 
 #[cfg(target_os = "macos")]
 pub fn create_adaptor() -> Result<Box<CANAdaptor>, &'static str> {
-    self::peak::adaptor::PeakAdaptor::new()
+    self::peak::PeakAdaptor::new()
 }
 
 #[cfg(not(target_os = "macos"))]
 pub fn create_adaptor() -> Result<Box<CANAdaptor>, &'static str> {
-    self::dummy::adaptor::DummyAdaptor::new()
+    self::dummy::DummyAdaptor::new()
 }
 
 
