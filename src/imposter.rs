@@ -43,7 +43,7 @@ impl Imposter {
         }
     }
 
-    pub fn handle_message(&self, adaptor: &Box<CANAdaptor>, message: &CANMessage) {
+    pub fn handle_message(&mut self, adaptor: &Box<CANAdaptor>, message: &CANMessage) {
         if let Some(response) = self.response_for_message(&message) {
             adaptor.send(&response).expect("Failed to send CAN message.");
         } else {
@@ -51,11 +51,11 @@ impl Imposter {
         }
     }
 
-    pub fn response_for_message(&self, message: &CANMessage) -> Option<CANMessage> {
+    pub fn response_for_message(&mut self, message: &CANMessage) -> Option<CANMessage> {
         for i in 0..(self.stubs.len()) {
-            let s = &self.stubs[i];
-            if s.matches_message(message) {
-                return Some(s.generate_response(message));
+            let stub = &mut self.stubs[i];
+            if stub.matches_message(message) {
+                return Some(stub.generate_response(message));
             }
         }
         None

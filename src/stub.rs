@@ -12,17 +12,23 @@ pub struct ResponseTemplate {
     data: Option<Vec<String>>,
 }
 
-
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Stub {
+pub struct StubDefinition {
     predicates: Vec<Predicate>,
     responses: Vec<ResponseTemplate>,
 }
 
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Stub {
+    def: StubDefinition,
+    response_idx: usize,
+}
+
 impl Stub {
     pub fn from_str(s: &str) -> Result<Stub, &'static str> {
-        let stub: Stub = serde_json::from_str(s).expect("Failed to parse JSON");
-        Ok(stub)
+        let def: StubDefinition = serde_json::from_str(s).expect("Failed to parse JSON");
+        Ok(Stub { def, response_idx: 0 })
     }
 
     pub fn from_file(filename: &str) -> Result<Stub, &'static str> {
@@ -33,14 +39,16 @@ impl Stub {
     }
 
     pub fn matches_message(&self, message: &CANMessage) -> bool {
-        self.predicates.iter().find(|p| p.eval(message) == false).is_none()
+        self.def.predicates.iter().find(|p| p.eval(message) == false).is_none()
     }
 
-    pub fn generate_response(&self, message: &CANMessage) -> CANMessage {
-        if self.responses.len() == 0 {
+    pub fn generate_response(&mut self, message: &CANMessage) -> CANMessage {
+        if self.def.responses.len() == 0 {
             panic!("cannot generate response; no response template defined on stub");
         }
-        self.generate_response_from_template(&self.responses[0], message)
+        let response = &self.def.responses[self.response_idx];
+        self.response_idx = (self.response_idx + 1) % self.def.responses.len();
+        self.generate_response_from_template(response, message)
     }
 
     fn generate_response_from_template(&self, template: &ResponseTemplate, _message: &CANMessage) -> CANMessage {
@@ -131,7 +139,7 @@ mod tests {
 
     #[test]
     fn creates_response_with_hex_id_and_data_from_template() {
-        let stub = Stub::from_str(r#"{
+        let mut stub = Stub::from_str(r#"{
                      "predicates": [],
                      "responses": [{ "id": "0x0102", "data": [ "0x17", "SDF", "0x03" ] }]
                    }"#).expect("");
@@ -144,4 +152,23 @@ mod tests {
         assert_eq!(0, response.data[1]); // TODO: skips unparsable numbers
         assert_eq!(0x03, response.data[2]);
     }
+
+    #[test]
+    fn cycles_through_multiple_responses() {
+        let mut stub = Stub::from_str(r#"{
+                     "predicates": [],
+                     "responses": [
+                        { "id": "0x01", "data": [ "0x17" ] },
+                        { "id": "0x02", "data": [ "0x17" ] }
+                      ]
+                   }"#).expect("");
+
+        let response1 = stub.generate_response(&CANMessage::new());
+        assert_eq!(0x01, response1.id);
+        let response2 = stub.generate_response(&CANMessage::new());
+        assert_eq!(0x02, response2.id);
+        let response3 = stub.generate_response(&CANMessage::new());
+        assert_eq!(0x01, response3.id);
+    }
+
 }
