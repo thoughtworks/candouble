@@ -1,10 +1,5 @@
-use std::fmt;
-use std::mem;
-use std::ptr;
-use libc::select;
-use libc::fd_set;
-use libc::FD_ZERO;
-use libc::FD_SET;
+use std::{fmt, mem, ptr};
+use libc::{select, fd_set, FD_ZERO, FD_SET};
 use can::{CANMessage, CANAdaptor};
 use can::pcbusb::*;
 

@@ -1,5 +1,4 @@
-use std::fmt;
-use std::mem;
+use std::{fmt, mem};
 
 #[cfg(not(feature = "pcan"))]
 pub mod dummy;
