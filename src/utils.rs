@@ -1,3 +1,5 @@
+use serde_json;
+use serde::Deserialize;
 
 pub fn num_from_string_u64(string: &str) -> Option<u64> {
     if string.starts_with("0x") {
@@ -10,4 +12,8 @@ pub fn num_from_string_u64(string: &str) -> Option<u64> {
         }
     }
     None
+}
+
+pub fn from_json<'a, T>(s: &'a str) -> T where T: Deserialize<'a> {
+    serde_json::from_str(s).expect("Failed to parse JSON")
 }

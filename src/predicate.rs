@@ -59,6 +59,15 @@ impl Predicate {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use utils;
+    use can::CANMessage;
+
+    // this methods is only here to make the return type explicit,
+    // which in turn makes the tests a tiny bit more concise
+    fn from_json(s: &str) -> Predicate {
+        utils::from_json(s)
+    }
+
 
     #[test]
     fn pattern_matches_value_when_decimal_number_is_equal() {
@@ -80,5 +89,47 @@ mod tests {
         assert_eq!(true, Predicate::matches_value("*", 0x0101));
     }
 
-    // TODO: consider moving some of the tests from Stub over here
+
+    #[test]
+    fn matches_if_id_is_equal() {
+        let p = from_json(r#"{ "eq": { "id": "0x0101" } }"#);
+        let message = CANMessage::with_content(0x0101, 0, &[]);
+        assert_eq!(true, p.eval(&message));
+    }
+
+    #[test]
+    fn does_not_match_if_id_is_not_equal() {
+        let p = from_json(r#"{ "eq": { "id": "0x0101" } }"#);
+        let message = CANMessage::with_content(0x0102, 0, &[]);
+        assert_eq!(false, p.eval(&message));
+    }
+
+    #[test]
+    fn matches_when_id_and_literal_data_match() {
+        let p = from_json(r#"{ "msg": { "id": "0x0101", "data": ["0x01"] } }"#);
+        let message = CANMessage::with_content(0x0101, 0, &[0x01]);
+        assert_eq!(true, p.eval(&message));
+    }
+
+    #[test]
+    fn matches_when_id_and_data_with_asterisk_match() {
+        let p = from_json(r#"{ "msg": { "id": "0x0101", "data": ["*", "0x02"] } }"#);
+        let message = CANMessage::with_content(0x0101, 0, &[0x01, 0x02]);
+        assert_eq!(true, p.eval(&message));
+    }
+
+    #[test]
+    fn does_not_match_when_id_matches_but_data_does_not() {
+        let p = from_json(r#"{ "msg": { "id": "0x0101", "data": ["0x02"] } }"#);
+        let message = CANMessage::with_content(0x101, 0, &[0x01]);
+        assert_eq!(false, p.eval(&message));
+    }
+
+    #[test]
+    fn does_not_match_when_data_matches_but_id_does_not() {
+        let p = from_json(r#"{ "msg": { "id": "0x0102", "data": ["*"] } }"#);
+        let message = CANMessage::with_content(0x0101, 0, &[0x01]);
+        assert_eq!(false, p.eval(&message));
+    }
+
 }

@@ -9,6 +9,7 @@ extern crate serde_json;
 pub mod imposter;
 pub mod stub;
 pub mod predicate;
+pub mod response;
 pub mod can;
 pub mod utils;
 
