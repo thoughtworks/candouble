@@ -1,5 +1,5 @@
 [package]
-name = "speedboat"
+name = "candouble"
 version = "0.1.0"
 authors = ["Erik Doernenburg <erik@thoughtworks.com>"]
 build = "build.rs"

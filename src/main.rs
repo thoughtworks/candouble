@@ -1,4 +1,4 @@
-extern crate speedboat;
+extern crate candouble;
 extern crate getopts;
 
 use getopts::Options;
@@ -26,7 +26,7 @@ fn main() {
         print_usage(&program, opts);
         return;
     };
-    speedboat::run(input_files);
+    candouble::run(input_files);
 }
 
 
