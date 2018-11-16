@@ -1,7 +1,7 @@
 
 # candouble
 
-[![Build Status](https://api.travis-ci.org/thoughtworks/candouble.svg?branch=master)](https://api.travis-ci.org/thoughtworks/candouble)
+[![Build Status](https://api.travis-ci.org/thoughtworks/candouble.svg?branch=master)](https://travis-ci.org/thoughtworks/candouble)
 
 
 ## CAN Adaptors
