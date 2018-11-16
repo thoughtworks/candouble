@@ -1,4 +1,10 @@
 
+# candouble
+
+[![Build Status](https://api.travis-ci.org/thoughtworks/candouble.svg?branch=master)]((https://api.travis-ci.org/thoughtworks/candouble)
+
+
+## CAN Adaptors
 If you're on a Mac and have the PCAN adaptor attached, you should run the
 application with the `pcan` feature. For it to find the native library you
 have to set the dynamic library loading path:
