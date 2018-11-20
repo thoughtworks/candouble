@@ -1,7 +1,7 @@
-extern crate speedboat;
+extern crate candouble;
 
-use speedboat::stub::Stub;
-use speedboat::can::CANMessage;
+use candouble::stub::Stub;
+use candouble::can::CANMessage;
 
 #[test]
 fn it_stub_matches_when_all_predicates_are_true() {
