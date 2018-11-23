@@ -15,6 +15,8 @@ pub enum Behavior {
     Wait(u64),
     #[serde(rename = "repeat")]
     Repeat(u32),
+    #[serde(rename = "drop")]
+    Drop(bool),
 }
 
 
@@ -58,7 +60,7 @@ mod tests {
     fn parses_behavior_from_template() {
         let t: ResponseTemplate = from_json(r#"{ "id": "0x0102", "data": ["0x017" ],
                                                  "_behaviors": [ { "wait": 500 } ] }"#);
-        assert_eq!(true, t.behaviors.is_some());
+        assert!(t.behaviors.is_some());
         if let Some(b) = t.behaviors {
             match &b[0] {
                 Behavior::Wait(arg) => {

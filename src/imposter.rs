@@ -44,21 +44,19 @@ impl Imposter {
     }
 
     pub fn handle_message(&mut self, adaptor: &Box<CANAdaptor>, message: &CANMessage) {
-        if let Some(response) = self.response_for_message(&message) {
+        for response in self.responses_to_message(&message) {
             adaptor.send(&response).expect("Failed to send CAN message.");
-        } else {
-            println!("No stub for message.");
         }
     }
 
-    pub fn response_for_message(&mut self, message: &CANMessage) -> Option<CANMessage> {
+    pub fn responses_to_message(&mut self, message: &CANMessage) -> Vec<CANMessage> {
         for i in 0..(self.stubs.len()) {
             let stub = &mut self.stubs[i];
             if stub.matches_message(message) {
-                return Some(stub.generate_response(message));
+                return stub.generate_response(message);
             }
         }
-        None
+        vec![]
     }
 }
 
@@ -89,14 +87,11 @@ mod tests {
         let mut message = CANMessage::new();
         message.id = 0x0202;
 
-        let opt = imposter.response_for_message(&message);
+        let responses = imposter.responses_to_message(&message);
 
-        assert_eq!(true, opt.is_some());
-        if let Some(r) = opt {
-            assert_eq!(0x0202, r.id);
-        }
-
-
+        assert_eq!(1, responses.len());
+        assert_eq!(0x0202, responses[0].id);
     }
+
 }
 

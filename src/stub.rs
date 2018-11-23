@@ -40,13 +40,14 @@ impl Stub {
         self.def.predicates.iter().find(|p| p.eval(message) == false).is_none()
     }
 
-    pub fn generate_response(&mut self, message: &CANMessage) -> CANMessage {
+    pub fn generate_response(&mut self, message: &CANMessage) -> Vec<CANMessage> {
         if self.def.responses.len() == 0 {
             panic!("cannot generate response; no response template defined on stub");
         }
 
         let template = &self.def.responses[self.response_idx];
         let mut done_with_response = true;
+        let mut drop_response = false;
 
         if let Some(b) = &template.behaviors {
             match &b[0] {
@@ -63,6 +64,11 @@ impl Stub {
                         done_with_response = false;
                     }
                 }
+                Behavior::Drop(arg) => {
+                    if *arg {
+                        drop_response = true;
+                    }
+                }
             }
         }
 
@@ -70,7 +76,11 @@ impl Stub {
             self.response_idx = (self.response_idx + 1) % self.def.responses.len();
         }
 
-        template.generate_response(message)
+        if drop_response {
+            return vec![]
+        }
+
+        vec![template.generate_response(message)]
     }
 }
 
@@ -91,11 +101,11 @@ mod tests {
                       ]
                    }"#).expect("");
 
-        let response1 = stub.generate_response(&CANMessage::new());
+        let response1 = stub.generate_response(&CANMessage::new())[0];
         assert_eq!(0x01, response1.id);
-        let response2 = stub.generate_response(&CANMessage::new());
+        let response2 = stub.generate_response(&CANMessage::new())[0];
         assert_eq!(0x02, response2.id);
-        let response3 = stub.generate_response(&CANMessage::new());
+        let response3 = stub.generate_response(&CANMessage::new())[0];
         assert_eq!(0x01, response3.id);
     }
 
@@ -124,13 +134,29 @@ mod tests {
                       ]
                    }"#).expect("");
 
-        let response1 = stub.generate_response(&CANMessage::new());
+        let response1 = stub.generate_response(&CANMessage::new())[0];
         assert_eq!(0x01, response1.id);
-        let response2 = stub.generate_response(&CANMessage::new());
+        let response2 = stub.generate_response(&CANMessage::new())[0];
         assert_eq!(0x01, response2.id);
-        let response3 = stub.generate_response(&CANMessage::new());
+        let response3 = stub.generate_response(&CANMessage::new())[0];
         assert_eq!(0x02, response3.id);
-        let response4 = stub.generate_response(&CANMessage::new());
+        let response4 = stub.generate_response(&CANMessage::new())[0];
         assert_eq!(0x01, response4.id);
+    }
+
+    #[test]
+    fn drop_behavior_drops_a_message() {
+        let mut stub = Stub::from_str(r#"{
+                     "predicates": [],
+                     "responses": [
+                        { "id": "0x01", "data": [ ], "_behaviors": [ { "drop": true } ] },
+                        { "id": "0x02", "data": [ ] }
+                      ]
+                   }"#).expect("");
+
+        let responses = stub.generate_response(&CANMessage::new());
+        assert_eq!(0, responses.len());
+        let response2 = stub.generate_response(&CANMessage::new())[0];
+        assert_eq!(0x02, response2.id);
     }
 }
