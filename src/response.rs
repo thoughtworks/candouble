@@ -5,7 +5,18 @@ use utils;
 pub struct ResponseTemplate {
     id: String,
     data: Vec<String>,
+    #[serde(rename = "_behaviors")]
+    pub behaviors: Option<Vec<Behavior>>,
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+pub enum Behavior {
+    #[serde(rename = "wait")]
+    Wait(u64),
+    #[serde(rename = "repeat")]
+    Repeat(u32),
+}
+
 
 impl ResponseTemplate {
 
@@ -42,5 +53,21 @@ mod tests {
         assert_eq!(0, response.data[1]); // TODO: skips unparsable numbers
         assert_eq!(0x03, response.data[2]);
     }
+
+    #[test]
+    fn parses_behavior_from_template() {
+        let t: ResponseTemplate = from_json(r#"{ "id": "0x0102", "data": ["0x017" ],
+                                                 "_behaviors": [ { "wait": 500 } ] }"#);
+        assert_eq!(true, t.behaviors.is_some());
+        if let Some(b) = t.behaviors {
+            match &b[0] {
+                Behavior::Wait(arg) => {
+                    assert_eq!(500, *arg);
+                }
+                _ => panic!("expected to find wait behavior")
+            }
+        }
+    }
+
 
 }
