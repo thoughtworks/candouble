@@ -17,6 +17,8 @@ pub enum Behavior {
     Repeat(u32),
     #[serde(rename = "drop")]
     Drop(bool),
+    #[serde(rename = "concat")]
+    Concat(bool),
 }
 
 

@@ -53,7 +53,7 @@ impl Imposter {
         for i in 0..(self.stubs.len()) {
             let stub = &mut self.stubs[i];
             if stub.matches_message(message) {
-                return stub.generate_response(message);
+                return stub.generate_responses(message);
             }
         }
         vec![]
