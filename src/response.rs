@@ -1,7 +1,7 @@
 use can::CANMessage;
 use utils;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ResponseTemplate {
     id: String,
     data: Vec<String>,
@@ -9,35 +9,25 @@ pub struct ResponseTemplate {
     pub behaviors: Option<Vec<Behavior>>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum Behavior {
-    #[serde(rename = "wait")]
-    Wait(u64),
-    #[serde(rename = "repeat")]
-    Repeat(u32),
-    #[serde(rename = "drop")]
-    Drop(bool),
-    #[serde(rename = "concat")]
-    Concat(bool),
+    #[serde(rename = "wait")]    Wait(u64),
+    #[serde(rename = "repeat")]  Repeat(usize),
+    #[serde(rename = "drop")]    Drop(bool),
+    #[serde(rename = "concat")]  Concat(bool),
 }
 
 
 impl ResponseTemplate {
-
     pub fn generate_response(&self, _message: &CANMessage) -> CANMessage {
         let mut response = CANMessage::new();
-        if let Some(id) = utils::num_from_string_u64(&self.id) {
-            response.id = id;
-        }
+        response.id = utils::num_from_string_u64(&self.id);
         response.len = self.data.len() as u8;
         for i in 0..(self.data.len()) {
-            if let Some(val) = utils::num_from_string_u64(&self.data[i]) {
-                response.data[i] = val as u8;
-            }
+            response.data[i] = utils::num_from_string_u64(&self.data[i]) as u8;
         }
         response
     }
-
 }
 
 
@@ -49,13 +39,12 @@ mod tests {
 
     #[test]
     fn creates_response_with_hex_id_and_data_from_template() {
-        let t: ResponseTemplate = from_json(r#"{ "id": "0x0102", "data": ["0x017", "SDF", "0x03"] }"#);
+        let t: ResponseTemplate = from_json(r#"{ "id": "0x0102", "data": ["0x017", "0x03"] }"#);
         let response = t.generate_response(&CANMessage::new());
         assert_eq!(0x0102, response.id);
-        assert_eq!(3, response.len);
+        assert_eq!(2, response.len);
         assert_eq!(0x17, response.data[0]);
-        assert_eq!(0, response.data[1]); // TODO: skips unparsable numbers
-        assert_eq!(0x03, response.data[2]);
+        assert_eq!(0x03, response.data[1]);
     }
 
     #[test]
@@ -72,6 +61,4 @@ mod tests {
             }
         }
     }
-
-
 }

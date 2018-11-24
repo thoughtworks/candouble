@@ -1,7 +1,5 @@
 use std::io::Error;
-use can::create_adaptor;
-use can::CANMessage;
-use can::CANAdaptor;
+use can::{create_adaptor, CANMessage, CANAdaptor};
 use stub::Stub;
 
 
@@ -12,9 +10,7 @@ pub struct Imposter {
 
 impl Imposter {
     pub fn new() -> Imposter {
-        Imposter {
-            stubs: Vec::new(),
-        }
+        Imposter { stubs: Vec::new() }
     }
 
 

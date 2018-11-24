@@ -9,8 +9,6 @@ impl DummyAdaptor {
     pub fn new() -> Result<Box<CANAdaptor>, &'static str> {
         Ok(Box::new(DummyAdaptor {}))
     }
-
-    pub fn drop(&mut self) {}
 }
 
 

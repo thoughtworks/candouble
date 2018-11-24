@@ -45,12 +45,10 @@ impl Predicate {
     }
 
     fn matches_value(pattern: &str, value: u64) -> bool {
-        if let Some(num) = utils::num_from_string_u64(pattern) {
-            return value == num;
-        } else if pattern == "*" {
+        if pattern == "*" {
             return true;
         } else {
-            return false;
+            return value == utils::num_from_string_u64(pattern);
         }
     }
 }

@@ -3,10 +3,9 @@ use std::time::Duration;
 use std::io::Read;
 use std::fs::File;
 use serde_json;
-use predicate::Predicate;
-use response::ResponseTemplate;
 use can::CANMessage;
-use response::Behavior;
+use predicate::Predicate;
+use response::{ResponseTemplate, Behavior};
 
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -45,53 +44,46 @@ impl Stub {
             panic!("cannot generate response; no response template defined on stub");
         }
 
+        let prev_idx = self.response_idx;
         let mut responses = Vec::new();
-        let mut idx = self.response_idx;
-        let mut move_to_next_template = true;
+        let mut generate_response = true;
 
-        loop {
-            let mut drop_response = false;
-            let mut generate_another_response = false;
-
-            let template = &self.def.responses[idx];
-            if let Some(behaviors) = &template.behaviors {
+        while generate_response {
+            responses.push(self.get_template().generate_response(message));
+            generate_response = false;
+            if let Some(behaviors) = self.get_template().behaviors.clone() {
                 for b in behaviors {
                     match b {
-                        Behavior::Wait(arg) => {
-                            thread::sleep(Duration::from_millis(*arg));
-                        }
-                        Behavior::Repeat(arg) => {
-                            if self.response_repeats == 0 {
-                                self.response_repeats = *arg as usize;
-                            }
-                            self.response_repeats -= 1;
-                            if self.response_repeats > 0 {
-                                move_to_next_template = false;
-                            }
-                        }
-                        Behavior::Drop(arg) => {
-                            drop_response = *arg;
-                        }
-                        Behavior::Concat(arg) => {
-                            generate_another_response = *arg;
-                        }
+                        Behavior::Wait(arg) => { thread::sleep(Duration::from_millis(arg)); }
+                        Behavior::Repeat(arg) => { self.update_response_repeats(arg); }
+                        Behavior::Drop(arg) => { if arg { responses.pop(); } }
+                        Behavior::Concat(arg) => { generate_response = arg }
                     }
                 }
             }
-            if !drop_response {
-                responses.push(template.generate_response(message))
-            }
-            idx = (idx + 1) % self.def.responses.len();
-            if !generate_another_response {
-                break;
-            }
+            self.inc_response_idx();
         }
 
-        if move_to_next_template {
-            self.response_idx = idx;
+        if self.response_repeats > 0 {
+            self.response_idx = prev_idx;
         }
 
         responses
+    }
+
+    fn get_template(&self) -> &ResponseTemplate {
+        &self.def.responses[self.response_idx]
+    }
+
+    fn inc_response_idx(&mut self) {
+        self.response_idx = (self.response_idx + 1) % self.def.responses.len();
+    }
+
+    fn update_response_repeats(&mut self, count: usize) {
+        if self.response_repeats == 0 {
+            self.response_repeats = count;
+        }
+        self.response_repeats -= 1;
     }
 }
 
@@ -160,8 +152,8 @@ mod tests {
         let mut stub = Stub::from_str(r#"{
                      "predicates": [],
                      "responses": [
-                        { "id": "0x01", "data": [ ], "_behaviors": [ { "drop": true } ] },
-                        { "id": "0x02", "data": [ ] }
+                        { "id": "0x01", "data": [], "_behaviors": [ { "drop": true } ] },
+                        { "id": "0x02", "data": [] }
                       ]
                    }"#).expect("");
 
@@ -172,14 +164,14 @@ mod tests {
     }
 
     #[test]
-    fn concat_behavior_concatenates_message() {
+    fn concat_behavior_concatenates_messages() {
         let mut stub = Stub::from_str(r#"{
                      "predicates": [],
                      "responses": [
-                        { "id": "0x01", "data": [ ], "_behaviors": [ { "concat": true } ] },
-                        { "id": "0x02", "data": [ ], "_behaviors": [ { "concat": true } ] },
-                        { "id": "0x03", "data": [ ] },
-                        { "id": "0x04", "data": [ ] }
+                        { "id": "0x01", "data": [], "_behaviors": [ { "concat": true } ] },
+                        { "id": "0x02", "data": [], "_behaviors": [ { "concat": true } ] },
+                        { "id": "0x03", "data": [] },
+                        { "id": "0x04", "data": [] }
                       ]
                    }"#).expect("");
 
@@ -198,12 +190,12 @@ mod tests {
         let mut stub = Stub::from_str(r#"{
                      "predicates": [],
                      "responses": [
-                        { "id": "0x01", "data": [ ], "_behaviors": [
+                        { "id": "0x01", "data": [], "_behaviors": [
                                                         { "concat": true },
                                                         { "repeat": 2 }
                                                      ] },
-                        { "id": "0x02", "data": [ ] },
-                        { "id": "0x03", "data": [ ] }
+                        { "id": "0x02", "data": [] },
+                        { "id": "0x03", "data": [] }
                       ]
                    }"#).expect("");
 
