@@ -1,3 +1,5 @@
+use std::thread;
+use core::time;
 use can::{CANMessage, CANAdaptor};
 
 
@@ -15,6 +17,8 @@ impl DummyAdaptor {
 impl CANAdaptor for DummyAdaptor {
 
     fn receive(&self) -> Result<CANMessage, &'static str> {
+        println!("cannot receive message using dummy CANAdaptor; will sleep for one hour");
+        thread::sleep(time::Duration::from_secs(3600));
         Err("cannot receive message using dummy CANAdaptor")
     }
 

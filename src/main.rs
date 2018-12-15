@@ -23,8 +23,7 @@ fn main() {
     let input_files = if !matches.free.is_empty() {
         matches.free.clone()
     } else {
-        print_usage(&program, opts);
-        return;
+        vec![]
     };
     candouble::run(input_files);
 }
