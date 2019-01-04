@@ -7,16 +7,14 @@ use gotham::handler::{HandlerFuture, IntoHandlerError};
 use gotham::helpers::http::response::{create_response, create_empty_response};
 use futures::{future, Future, Stream};
 use hyper::{Body, Response, StatusCode};
-use utils;
+use crate::utils;
 
 
-pub struct WebApi {
-}
+pub struct WebApi {}
 
 impl WebApi {
-
     pub fn new() -> WebApi {
-        WebApi { }
+        WebApi {}
     }
 
     pub fn run(&mut self, host: &str, port: u16) {
@@ -34,21 +32,21 @@ impl WebApi {
     }
 
     fn post_imposter(mut state: State) -> Box<HandlerFuture> {
-        let f = Body::take_from(&mut state)
-            .concat2()
-            .then(|full_body| match full_body {
+        let f = Body::take_from(&mut state).concat2().then(|full_body|
+            match full_body {
                 Ok(valid_body) => {
                     let body_content = String::from_utf8(valid_body.to_vec()).unwrap();
                     let json_val: Value = utils::from_json(&body_content);
                     println!("imposters <= {}", json_val);
-                    let response = create_empty_response(&state, StatusCode::OK);
+                    let response = create_empty_response(&state, StatusCode::CREATED);
                     future::ok((state, response))
                 }
-                Err(e) => return future::err((state, e.into_handler_error())),
+                Err(e) => {
+                    future::err((state, e.into_handler_error()))
+                }
             });
         Box::new(f)
     }
-
 }
 
 pub fn router() -> Router {

@@ -1,6 +1,6 @@
 use std::io::Error;
-use can::{create_adaptor, CANMessage, CANAdaptor};
-use stub::Stub;
+use crate::can::{create_adaptor, CANMessage, CANAdaptor};
+use crate::stub::Stub;
 
 
 pub struct Imposter {

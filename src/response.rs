@@ -1,5 +1,6 @@
-use can::CANMessage;
-use utils;
+use serde_derive::*;
+use crate::can::CANMessage;
+use crate::utils;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ResponseTemplate {
@@ -34,8 +35,8 @@ impl ResponseTemplate {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use utils::from_json;
-    use can::CANMessage;
+    use crate::utils::from_json;
+    use crate::can::CANMessage;
 
     #[test]
     fn creates_response_with_hex_id_and_data_from_template() {

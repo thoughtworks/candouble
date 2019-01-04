@@ -1,15 +1,4 @@
 
-extern crate libc;
-extern crate serde;
-#[macro_use]
-extern crate serde_derive;
-extern crate serde_json;
-extern crate core;
-extern crate gotham;
-extern crate hyper;
-extern crate mime;
-extern crate futures;
-
 pub mod imposter;
 pub mod stub;
 pub mod predicate;

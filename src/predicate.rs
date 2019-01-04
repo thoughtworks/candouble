@@ -1,6 +1,7 @@
 use std::collections::HashMap;
-use can::CANMessage;
-use utils;
+use serde_derive::*;
+use crate::can::CANMessage;
+use crate::utils;
 
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -57,8 +58,8 @@ impl Predicate {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use utils;
-    use can::CANMessage;
+    use crate::utils;
+    use crate::can::CANMessage;
 
     // this methods is only here to make the return type explicit,
     // which in turn makes the tests a tiny bit more concise

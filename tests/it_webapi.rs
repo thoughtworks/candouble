@@ -42,7 +42,7 @@ fn it_can_ping_api() {
 #[test]
 fn it_can_post_new_imposter() {
     let imposter = r#"{
-                    "id": 1,
+                    "id": 1x,
                     "stubs": [
                         { "predicates": [{ "eq": { "id": "0x01" } }],
                           "responses": [{ "id": "0x02", "data": [ "0x17" ] }] }
@@ -51,6 +51,6 @@ fn it_can_post_new_imposter() {
     let client = client();
 
     let response = post(&client, "/imposters", imposter.to_string());
-    assert_eq!(response.status(), 200);
+    assert_eq!(response.status(), 201);
 }
 

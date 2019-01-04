@@ -1,6 +1,6 @@
 use std::thread;
 use core::time;
-use can::{CANMessage, CANAdaptor};
+use crate::can::{CANMessage, CANAdaptor};
 
 
 pub struct DummyAdaptor {

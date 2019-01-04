@@ -2,10 +2,11 @@ use std::thread;
 use std::time::Duration;
 use std::io::Read;
 use std::fs::File;
+use serde_derive::*;
 use serde_json;
-use can::CANMessage;
-use predicate::Predicate;
-use response::{ResponseTemplate, Behavior};
+use crate::can::CANMessage;
+use crate::predicate::Predicate;
+use crate::response::{ResponseTemplate, Behavior};
 
 
 #[derive(Serialize, Deserialize, Debug)]
