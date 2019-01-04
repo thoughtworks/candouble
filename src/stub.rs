@@ -1,7 +1,5 @@
 use std::thread;
 use std::time::Duration;
-use std::io::Read;
-use std::fs::File;
 use serde_derive::*;
 use serde_json;
 use crate::can::CANMessage;
@@ -15,33 +13,36 @@ pub struct StubDefinition {
     responses: Vec<ResponseTemplate>,
 }
 
-
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Stub {
-    def: StubDefinition,
+    predicates: Vec<Predicate>,
+    responses: Vec<ResponseTemplate>,
     response_idx: usize,
     response_repeats: usize,
 }
 
 impl Stub {
-    pub fn from_str(s: &str) -> Result<Stub, &'static str> {
-        let def: StubDefinition = serde_json::from_str(s).expect("Failed to parse JSON");
-        Ok(Stub { def, response_idx: 0, response_repeats: 0 })
+
+    pub fn new(def: StubDefinition) -> Stub {
+        Stub {
+            predicates: def.predicates,
+            responses: def.responses,
+            response_idx: 0,
+            response_repeats: 0
+        }
     }
 
-    pub fn from_file(filename: &str) -> Result<Stub, &'static str> {
-        let mut file = File::open(filename).expect(&format!("Failed to open file {}", filename));
-        let mut contents = String::new();
-        file.read_to_string(&mut contents).expect(&format!("Failed to read file {}", filename));
-        Stub::from_str(&contents)
+    pub fn from_str(s: &str) -> Result<Stub, &'static str> {
+        let def: StubDefinition = serde_json::from_str(s).expect("Failed to parse JSON");
+        Ok(Stub::new(def))
     }
 
     pub fn matches_message(&self, message: &CANMessage) -> bool {
-        self.def.predicates.iter().find(|p| p.eval(message) == false).is_none()
+        self.predicates.iter().find(|p| p.eval(message) == false).is_none()
     }
 
     pub fn generate_responses(&mut self, message: &CANMessage) -> Vec<CANMessage> {
-        if self.def.responses.len() == 0 {
+        if self.responses.len() == 0 {
             panic!("cannot generate response; no response template defined on stub");
         }
 
@@ -73,11 +74,11 @@ impl Stub {
     }
 
     fn get_template(&self) -> &ResponseTemplate {
-        &self.def.responses[self.response_idx]
+        &self.responses[self.response_idx]
     }
 
     fn inc_response_idx(&mut self) {
-        self.response_idx = (self.response_idx + 1) % self.def.responses.len();
+        self.response_idx = (self.response_idx + 1) % self.responses.len();
     }
 
     fn update_response_repeats(&mut self, count: usize) {
@@ -92,8 +93,8 @@ impl Stub {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use can::CANMessage;
     use std::time::Instant;
+    use crate::can::CANMessage;
 
     #[test]
     fn cycles_through_multiple_responses() {

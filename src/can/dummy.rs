@@ -22,7 +22,7 @@ impl CANAdaptor for DummyAdaptor {
         Err("cannot receive message using dummy CANAdaptor")
     }
 
-    fn send(&self, _message: &CANMessage) -> Result<(), &'static str> {
+    fn send(&mut self, _message: &CANMessage) -> Result<(), &'static str> {
         Err("cannot send message using dummy CANAdaptor")
     }
 }

@@ -72,7 +72,7 @@ impl CANAdaptor for PeakAdaptor {
         Ok(message.clone())
     }
 
-    fn send(&self, message: &CANMessage) -> Result<(), &'static str> {
+    fn send(&mut self, message: &CANMessage) -> Result<(), &'static str> {
         let status = unsafe { CAN_Write(PCAN_USBBUS1, message) };
         if status != PCAN_ERROR_OK {
             return Err("CAN_Write error"); // TODO: maybe include error code

@@ -80,7 +80,7 @@ application with the `pcan` feature. For it to find the native library you
 have to set the dynamic library loading path:
 
     export LD_LIBRARY_PATH=./lib/PCBUSB
-    cargo run --features pcan tests/it_stubs.json
+    cargo run --features pcan tests/it_imposter.json
     
 If you're not on a Mac then you can run the unit tests, but there are no 
 adaptors yet for CAN hardware.

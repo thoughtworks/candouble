@@ -1,9 +1,0 @@
-{
-  "predicates": [
-    { "eq": { "id": "0x0101" } },
-    { "msg": { "id": "*", "data": ["0xCA", "*"] } }
-  ],
-  "responses": [
-    { "id": "0x0102", "data": ["0xCA", "0xFE"] }
-  ]
-}
