@@ -1,20 +1,15 @@
-use std::borrow::BorrowMut;
-use std::io::Error;
-use std::io::Read;
+use std::borrow:: BorrowMut;
 use std::fs::File;
+use std::io::{Error, Read};
 use std::sync::{Arc, Mutex};
-use serde_derive::*;
+
 use gotham_derive::*;
-use crate::can::{create_adaptor, CANMessage, CANAdaptor};
+use serde_derive::*;
+
+use crate::can::{CANAdaptor, CANMessage, create_adaptor};
 use crate::stub::{Stub, StubDefinition};
 use crate::utils;
 
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct ImposterDefinition {
-    id: u32,
-    stubs: Vec<StubDefinition>,
-}
 
 #[derive(Clone, StateData)]
 pub struct ImposterList {
@@ -23,43 +18,48 @@ pub struct ImposterList {
 
 impl ImposterList {
 
-    pub fn new()-> ImposterList {
-        ImposterList {
-            inner: Arc::new(Mutex::new(Vec::new())),
-        }
+    pub fn new()-> Self {
+        Self { inner: Arc::new(Mutex::new(Vec::new())) }
     }
 
-    pub fn add(&self, i: Imposter) {
+    pub fn add(&self, imposter: Imposter) {
         let mut guard = self.inner.lock().unwrap();
-        let l: &mut Vec<Imposter> = guard.borrow_mut();
-        l.push(i);
+        guard.borrow_mut().push(imposter);
     }
 
-    pub fn list(&self) -> Vec<Imposter> {
+    pub fn get_all(&self) -> Vec<Imposter> {
         let mut guard = self.inner.lock().unwrap();
-        let l: &mut Vec<Imposter> = guard.borrow_mut();
-        l.clone()
+        guard.borrow_mut().clone()
     }
 
 }
 
 
-#[derive(Clone)]
+#[derive(Deserialize)]
+pub struct ImposterDefinition {
+    id: u32,
+    stubs: Vec<StubDefinition>,
+}
+
+
+#[derive(Clone, Serialize)]
 pub struct Imposter {
+    pub id: u32,
     pub stubs: Vec<Stub>,
 }
 
 
 impl Imposter {
-    pub fn new() -> Imposter {
-        Imposter { stubs: Vec::new() }
+    pub fn new() -> Self {
+        Self { id: 0, stubs: Vec::new() }
     }
 
     pub fn from_json(json: &str) -> Imposter {
         let def: ImposterDefinition = utils::from_json(json);
         let mut imposter = Imposter::new();
+        imposter.id = def.id;
         for stub in def.stubs.into_iter() {
-            imposter.add_stub(Stub::new(stub))
+            imposter.stubs.push(Stub::new(stub))
         }
         imposter
     }
@@ -72,24 +72,19 @@ impl Imposter {
         Imposter::from_json(&contents)
     }
 
+    // TODO: only here to support loading individual stubs...
     pub fn load_stub(&mut self, filename: &str) -> Result<(), Error> {
         println!("Reading stub from file: {}", filename);
         let mut file = File::open(filename).expect(&format!("Failed to open file {}", filename));
         let mut contents = String::new();
         file.read_to_string(&mut contents).expect(&format!("Failed to read file {}", filename));
         let stub = Stub::new(utils::from_json(&contents));
-        self.add_stub(stub);
+        self.stubs.push(stub);
         Ok(())
     }
 
-    fn add_stub(&mut self, stub: Stub) {
-        println!("Adding stub: {:?}", stub);
-        self.stubs.push(stub);
-    }
-
     pub fn run(&mut self) {
-        println!("Running an imposter...");
-
+        println!("Running an imposter with id {}...", self.id);
         let mut adaptor = create_adaptor().expect("Failed to initialize CAN device.");
         loop {
             match adaptor.receive() {
@@ -122,9 +117,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn adds_stubs_from_json_definition() {
+    fn adds_stub_from_json_definition() {
         let imposter = Imposter::from_json(r#"{
-            "id": 1,
+            "id": 12,
             "stubs": [
                 {
                   "predicates": [{ "eq": { "id": "0x200" } }],
@@ -132,11 +127,12 @@ mod tests {
                 }
             ]}"#);
 
+        assert_eq!(12, imposter.id);
         assert_eq!(1, imposter.stubs.len());
     }
 
     #[test]
-    fn returns_reponse_from_first_matching_stub() {
+    fn returns_response_from_first_matching_stub() {
         let mut imposter = Imposter::from_json(r#"{
             "id": 1,
             "stubs": [
@@ -154,13 +150,12 @@ mod tests {
                 }
             ]}"#);
 
-        let mut message = CANMessage::new();
-        message.id = 0x0202;
+        let message = CANMessage::with_content(0x202, 0, &[ 0x00 ]);
 
         let responses = imposter.responses_to_message(&message);
 
         assert_eq!(1, responses.len());
-        assert_eq!(0x0202, responses[0].id);
+        assert_eq!(0x202, responses[0].id);
     }
 
 }

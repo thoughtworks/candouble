@@ -2,7 +2,7 @@ use serde_derive::*;
 use crate::can::CANMessage;
 use crate::utils;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResponseTemplate {
     id: String,
     data: Vec<String>,
@@ -10,7 +10,7 @@ pub struct ResponseTemplate {
     pub behaviors: Option<Vec<Behavior>>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Behavior {
     #[serde(rename = "wait")]    Wait(u64),
     #[serde(rename = "repeat")]  Repeat(usize),
@@ -55,9 +55,7 @@ mod tests {
         assert!(t.behaviors.is_some());
         if let Some(b) = t.behaviors {
             match &b[0] {
-                Behavior::Wait(arg) => {
-                    assert_eq!(500, *arg);
-                }
+                Behavior::Wait(arg) => { assert_eq!(500, *arg); }
                 _ => panic!("expected to find wait behavior")
             }
         }

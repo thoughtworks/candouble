@@ -1,6 +1,5 @@
 extern crate candouble;
 
-use candouble::stub::Stub;
 use candouble::can::{CANMessage, CANAdaptor};
 use candouble::imposter::Imposter;
 

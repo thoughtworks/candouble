@@ -11,8 +11,7 @@ use crate::imposter::ImposterList;
 
 pub fn run(input_files: Vec<String>)
 {
-    let mut webapi = webapi::WebApi::new();
-    webapi.run("localhost", 8080, ImposterList::new());
+    webapi::start_listener("localhost", 8080, ImposterList::new());
 
     let mut imposter = imposter::Imposter::new();
     for i in 0..(input_files.len()) {

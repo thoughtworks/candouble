@@ -4,7 +4,7 @@ use crate::can::CANMessage;
 use crate::utils;
 
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Predicate {
     #[serde(rename = "eq")]
     Equals(HashMap<String, String>),

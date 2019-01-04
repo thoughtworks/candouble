@@ -1,18 +1,21 @@
 extern crate candouble;
-extern crate serde_json;
-extern crate hyper;
 extern crate gotham;
+extern crate hyper;
+extern crate serde_json;
 
 use std::str;
-use serde_json::{Value, Map};
-use gotham::test::{TestServer, TestClient, TestResponse};
-use candouble::webapi;
-use candouble::utils;
+
+use gotham::test::{TestClient, TestResponse, TestServer};
+use serde_json::{Map, Value};
+
+use candouble::imposter::Imposter;
 use candouble::imposter::ImposterList;
+use candouble::utils;
+use candouble::webapi;
 
 
-fn client(imposters: ImposterList) -> TestClient {
-    TestServer::new(webapi::router(imposters)).unwrap().client()
+fn client(imposter_list: ImposterList) -> TestClient {
+    TestServer::new(webapi::router(imposter_list)).unwrap().client()
 }
 
 fn get(client: &TestClient, path: &str) -> TestResponse {
@@ -33,6 +36,7 @@ fn as_json_obj(response: TestResponse) -> Map<String, Value> {
 #[test]
 fn it_can_ping_api() {
     let client = client(ImposterList::new());
+
     let response = get(&client, "/ping");
 
     assert_eq!(response.status(), 200);
@@ -42,18 +46,32 @@ fn it_can_ping_api() {
 
 #[test]
 fn it_can_post_new_imposter() {
-    let imposter = r#"{
+    let doc = r#"{
                     "id": 1,
                     "stubs": [
                         { "predicates": [{ "eq": { "id": "0x01" } }],
                           "responses": [{ "id": "0x02", "data": [ "0x17" ] }] }
-                    ]}"#;
+                    ]
+                 }"#;
+    let list = ImposterList::new();
+    let client = client(list.clone());
 
-    let imposters = ImposterList::new();
-    let client = client(imposters.clone());
+    let response = post(&client, "/imposters", doc.to_string());
 
-    let response = post(&client, "/imposters", imposter.to_string());
     assert_eq!(201, response.status());
-    assert_eq!(1, imposters.list().len());
+    assert_eq!(1, list.get_all().len());
 }
 
+#[test]
+fn it_can_get_imposters() {
+    let list = ImposterList::new();
+    list.add(Imposter::from_json(r#"{ "id": 1, "stubs": [ ] }"#));
+    list.add(Imposter::from_json(r#"{ "id": 2, "stubs": [ ] }"#));
+    let client = client(list.clone());
+
+    let response = get(&client, "/imposters");
+
+    assert_eq!(200, response.status());
+    let obj = as_json_obj(response);
+    assert_eq!(2, obj.get("imposters").unwrap().as_array().unwrap().len());
+}
