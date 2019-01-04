@@ -1,4 +1,4 @@
-use std::borrow:: BorrowMut;
+use std::borrow::BorrowMut;
 use std::fs::File;
 use std::io::{Error, Read};
 use std::sync::{Arc, Mutex};
@@ -25,6 +25,16 @@ impl ImposterList {
     pub fn add(&self, imposter: Imposter) {
         let mut guard = self.inner.lock().unwrap();
         guard.borrow_mut().push(imposter);
+    }
+
+    pub fn get_by_id(&self, id: u32) -> Option<Imposter> {
+        let mut guard = self.inner.lock().unwrap();
+        for imposter in guard.borrow_mut().iter_mut() {
+            if imposter.id == id {
+                return Some(imposter.clone());
+            }
+        }
+        None
     }
 
     pub fn get_all(&self) -> Vec<Imposter> {

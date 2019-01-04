@@ -63,7 +63,7 @@ fn it_can_post_new_imposter() {
 }
 
 #[test]
-fn it_can_get_imposters() {
+fn it_can_get_all_imposters() {
     let list = ImposterList::new();
     list.add(Imposter::from_json(r#"{ "id": 1, "stubs": [ ] }"#));
     list.add(Imposter::from_json(r#"{ "id": 2, "stubs": [ ] }"#));
@@ -74,4 +74,30 @@ fn it_can_get_imposters() {
     assert_eq!(200, response.status());
     let obj = as_json_obj(response);
     assert_eq!(2, obj.get("imposters").unwrap().as_array().unwrap().len());
+}
+
+#[test]
+fn it_can_get_imposter_by_id() {
+    let list = ImposterList::new();
+    list.add(Imposter::from_json(r#"{ "id": 1, "stubs": [ ] }"#));
+    list.add(Imposter::from_json(r#"{ "id": 3, "stubs": [ ] }"#));
+    let client = client(list.clone());
+
+    let response = get(&client, "/imposters/3");
+
+    assert_eq!(200, response.status());
+    let obj = as_json_obj(response);
+    assert_eq!(3, obj.get("id").unwrap().as_i64().unwrap());
+}
+
+#[test]
+fn it_returns_404_for_non_existing_imposter() {
+    let list = ImposterList::new();
+    list.add(Imposter::from_json(r#"{ "id": 1, "stubs": [ ] }"#));
+    list.add(Imposter::from_json(r#"{ "id": 3, "stubs": [ ] }"#));
+    let client = client(list.clone());
+
+    let response = get(&client, "/imposters/2");
+
+    assert_eq!(404, response.status());
 }

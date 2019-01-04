@@ -86,3 +86,11 @@ If you're not on a Mac then you can run the unit tests, but there are no
 adaptors yet for CAN hardware.
 
 
+## Web API Examples
+
+    curl -i -X POST -H 'Content-Type: application/json' http://localhost:8080/imposters --data '{ "id": 1, "stubs": [ { "predicates": [{ "eq": { "id": "0x200" } }], "responses": [{ "id": "0x201", "data": [ "0x01" ] }] } ] }'
+    
+    curl -i http://localhost:8080/imposters
+    
+    curl -i http://localhost:8080/imposters/1
+    
