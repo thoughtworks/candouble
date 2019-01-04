@@ -8,6 +8,7 @@ extern crate core;
 extern crate gotham;
 extern crate hyper;
 extern crate mime;
+extern crate futures;
 
 pub mod imposter;
 pub mod stub;

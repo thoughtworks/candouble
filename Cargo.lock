@@ -88,6 +88,7 @@ dependencies = [
 name = "candouble"
 version = "0.1.0"
 dependencies = [
+ "futures 0.1.25 (registry+https://github.com/rust-lang/crates.io-index)",
  "getopts 0.2.18 (registry+https://github.com/rust-lang/crates.io-index)",
  "gotham 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "hyper 0.12.18 (registry+https://github.com/rust-lang/crates.io-index)",

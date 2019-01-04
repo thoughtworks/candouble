@@ -13,6 +13,7 @@ getopts = "0.2"
 gotham = "0.3.0"
 hyper = "0.12.18"
 mime = "0.3.12"
+futures = "0.1.25"
 
 [features]
 pcan = []
