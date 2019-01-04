@@ -1,7 +1,10 @@
+use std::borrow::BorrowMut;
 use std::io::Error;
 use std::io::Read;
 use std::fs::File;
+use std::sync::{Arc, Mutex};
 use serde_derive::*;
+use gotham_derive::*;
 use crate::can::{create_adaptor, CANMessage, CANAdaptor};
 use crate::stub::{Stub, StubDefinition};
 use crate::utils;
@@ -13,6 +16,35 @@ pub struct ImposterDefinition {
     stubs: Vec<StubDefinition>,
 }
 
+#[derive(Clone, StateData)]
+pub struct ImposterList {
+    inner: Arc<Mutex<Vec<Imposter>>>,
+}
+
+impl ImposterList {
+
+    pub fn new()-> ImposterList {
+        ImposterList {
+            inner: Arc::new(Mutex::new(Vec::new())),
+        }
+    }
+
+    pub fn add(&self, i: Imposter) {
+        let mut guard = self.inner.lock().unwrap();
+        let l: &mut Vec<Imposter> = guard.borrow_mut();
+        l.push(i);
+    }
+
+    pub fn list(&self) -> Vec<Imposter> {
+        let mut guard = self.inner.lock().unwrap();
+        let l: &mut Vec<Imposter> = guard.borrow_mut();
+        l.clone()
+    }
+
+}
+
+
+#[derive(Clone)]
 pub struct Imposter {
     pub stubs: Vec<Stub>,
 }

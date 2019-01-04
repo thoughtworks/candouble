@@ -8,10 +8,11 @@ use serde_json::{Value, Map};
 use gotham::test::{TestServer, TestClient, TestResponse};
 use candouble::webapi;
 use candouble::utils;
+use candouble::imposter::ImposterList;
 
 
-fn client() -> TestClient {
-    TestServer::new(webapi::router()).unwrap().client()
+fn client(imposters: ImposterList) -> TestClient {
+    TestServer::new(webapi::router(imposters)).unwrap().client()
 }
 
 fn get(client: &TestClient, path: &str) -> TestResponse {
@@ -31,7 +32,7 @@ fn as_json_obj(response: TestResponse) -> Map<String, Value> {
 
 #[test]
 fn it_can_ping_api() {
-    let client = client();
+    let client = client(ImposterList::new());
     let response = get(&client, "/ping");
 
     assert_eq!(response.status(), 200);
@@ -42,15 +43,17 @@ fn it_can_ping_api() {
 #[test]
 fn it_can_post_new_imposter() {
     let imposter = r#"{
-                    "id": 1x,
+                    "id": 1,
                     "stubs": [
                         { "predicates": [{ "eq": { "id": "0x01" } }],
                           "responses": [{ "id": "0x02", "data": [ "0x17" ] }] }
                     ]}"#;
 
-    let client = client();
+    let imposters = ImposterList::new();
+    let client = client(imposters.clone());
 
     let response = post(&client, "/imposters", imposter.to_string());
-    assert_eq!(response.status(), 201);
+    assert_eq!(201, response.status());
+    assert_eq!(1, imposters.list().len());
 }
 

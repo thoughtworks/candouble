@@ -13,7 +13,7 @@ pub struct StubDefinition {
     responses: Vec<ResponseTemplate>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone, Debug)]
 pub struct Stub {
     predicates: Vec<Predicate>,
     responses: Vec<ResponseTemplate>,
