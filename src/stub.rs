@@ -34,10 +34,6 @@ impl Stub {
         }
     }
 
-    fn from_json(s: &str) -> Stub {
-        Stub::new(serde_json::from_str(s).expect("Failed to parse JSON"))
-    }
-
     pub fn matches_message(&self, message: &CANMessage) -> bool {
         self.predicates.iter().find(|p| p.eval(message) == false).is_none()
     }
@@ -94,14 +90,16 @@ impl Stub {
 #[cfg(test)]
 mod tests {
     use std::time::Instant;
-
     use crate::can::CANMessage;
-
     use super::*;
+
+    fn from_json(s: &str) -> Stub {
+        Stub::new(serde_json::from_str(s).expect("Failed to parse JSON"))
+    }
 
     #[test]
     fn cycles_through_multiple_responses() {
-        let mut stub = Stub::from_json(r#"{
+        let mut stub = from_json(r#"{
                      "predicates": [],
                      "responses": [
                         { "id": "0x01", "data": [ "0x17" ] },
@@ -119,7 +117,7 @@ mod tests {
 
     #[test]
     fn wait_behavior_waits_before_responding() {
-        let mut stub = Stub::from_json(r#"{
+        let mut stub = from_json(r#"{
                      "predicates": [],
                      "responses": [
                         { "id": "0x01", "data": [ "0x17" ], "_behaviors": [ { "wait": 50 } ] }
@@ -134,7 +132,7 @@ mod tests {
 
     #[test]
     fn repeat_behavior_repeats_a_message() {
-        let mut stub = Stub::from_json(r#"{
+        let mut stub = from_json(r#"{
                      "predicates": [],
                      "responses": [
                         { "id": "0x01", "data": [ "0x17" ], "_behaviors": [ { "repeat": 2 } ] },
@@ -154,7 +152,7 @@ mod tests {
 
     #[test]
     fn drop_behavior_drops_a_message() {
-        let mut stub = Stub::from_json(r#"{
+        let mut stub = from_json(r#"{
                      "predicates": [],
                      "responses": [
                         { "id": "0x01", "data": [], "_behaviors": [ { "drop": true } ] },
@@ -170,7 +168,7 @@ mod tests {
 
     #[test]
     fn concat_behavior_concatenates_messages() {
-        let mut stub = Stub::from_json(r#"{
+        let mut stub = from_json(r#"{
                      "predicates": [],
                      "responses": [
                         { "id": "0x01", "data": [], "_behaviors": [ { "concat": true } ] },
@@ -192,7 +190,7 @@ mod tests {
 
     #[test]
     fn repeat_and_concat_behaviors_can_be_combined() {
-        let mut stub = Stub::from_json(r#"{
+        let mut stub = from_json(r#"{
                      "predicates": [],
                      "responses": [
                         { "id": "0x01", "data": [], "_behaviors": [
