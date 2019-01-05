@@ -3,6 +3,7 @@ name = "candouble"
 version = "0.1.0"
 authors = ["Erik Doernenburg <erik@thoughtworks.com>"]
 build = "build.rs"
+edition = "2018"
 
 [dependencies]
 serde = "1.0.76"
@@ -10,6 +11,11 @@ serde_json = "1.0.26"
 serde_derive = "1.0.76"
 libc = "0.2.43"
 getopts = "0.2"
+gotham = "0.3.0"
+gotham_derive = "*"
+hyper = "0.12.18"
+mime = "0.3.12"
+futures = "0.1.25"
 
 [features]
 pcan = []

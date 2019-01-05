@@ -1,25 +1,21 @@
 
-extern crate libc;
-extern crate serde;
-#[macro_use]
-extern crate serde_derive;
-extern crate serde_json;
-
-
 pub mod imposter;
 pub mod stub;
 pub mod predicate;
 pub mod response;
 pub mod can;
 pub mod utils;
+pub mod webapi;
 
+use crate::imposter::ImposterList;
+use crate::imposter::Imposter;
 
-pub fn run(input_files: Vec<String>)
+pub fn run(imposter_files: Vec<String>)
 {
-    let mut imposter = imposter::Imposter::new();
-    for i in 0..(input_files.len()) {
-        let fname = &input_files[i];
-        imposter.load_stub(fname).expect(&format!("Failed to load stub from {}", fname));
+    webapi::start_listener("localhost", 8080, ImposterList::new());
+
+    for file in imposter_files {
+        Imposter::from_file(&file).run();
+        // TODO: at the moment the run function blocks; only first imposter runs
     }
-    imposter.run();
 }

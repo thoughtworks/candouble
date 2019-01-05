@@ -1,46 +1,31 @@
 use std::thread;
 use std::time::Duration;
-use std::io::Read;
-use std::fs::File;
+
+use serde_derive::*;
 use serde_json;
-use can::CANMessage;
-use predicate::Predicate;
-use response::{ResponseTemplate, Behavior};
 
+use crate::can::CANMessage;
+use crate::predicate::Predicate;
+use crate::response::{Behavior, ResponseTemplate};
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct StubDefinition {
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Stub {
     predicates: Vec<Predicate>,
     responses: Vec<ResponseTemplate>,
-}
-
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Stub {
-    def: StubDefinition,
+    #[serde(skip)]
     response_idx: usize,
+    #[serde(skip)]
     response_repeats: usize,
 }
 
 impl Stub {
-    pub fn from_str(s: &str) -> Result<Stub, &'static str> {
-        let def: StubDefinition = serde_json::from_str(s).expect("Failed to parse JSON");
-        Ok(Stub { def, response_idx: 0, response_repeats: 0 })
-    }
-
-    pub fn from_file(filename: &str) -> Result<Stub, &'static str> {
-        let mut file = File::open(filename).expect(&format!("Failed to open file {}", filename));
-        let mut contents = String::new();
-        file.read_to_string(&mut contents).expect(&format!("Failed to read file {}", filename));
-        Stub::from_str(&contents)
-    }
 
     pub fn matches_message(&self, message: &CANMessage) -> bool {
-        self.def.predicates.iter().find(|p| p.eval(message) == false).is_none()
+        self.predicates.iter().find(|p| p.eval(message) == false).is_none()
     }
 
     pub fn generate_responses(&mut self, message: &CANMessage) -> Vec<CANMessage> {
-        if self.def.responses.len() == 0 {
+        if self.responses.len() == 0 {
             panic!("cannot generate response; no response template defined on stub");
         }
 
@@ -72,11 +57,11 @@ impl Stub {
     }
 
     fn get_template(&self) -> &ResponseTemplate {
-        &self.def.responses[self.response_idx]
+        &self.responses[self.response_idx]
     }
 
     fn inc_response_idx(&mut self) {
-        self.response_idx = (self.response_idx + 1) % self.def.responses.len();
+        self.response_idx = (self.response_idx + 1) % self.responses.len();
     }
 
     fn update_response_repeats(&mut self, count: usize) {
@@ -90,19 +75,26 @@ impl Stub {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use can::CANMessage;
     use std::time::Instant;
+    use crate::can::CANMessage;
+    use super::*;
+    use crate::utils;
+
+    // this methods is only here to make the return type explicit,
+    // which in turn makes the tests a tiny bit more concise
+    fn from_json(s: &str) -> Stub {
+        utils::from_json(s)
+    }
 
     #[test]
     fn cycles_through_multiple_responses() {
-        let mut stub = Stub::from_str(r#"{
+        let mut stub = from_json(r#"{
                      "predicates": [],
                      "responses": [
                         { "id": "0x01", "data": [ "0x17" ] },
                         { "id": "0x02", "data": [ "0x17" ] }
                       ]
-                   }"#).expect("");
+                   }"#);
 
         let response1 = stub.generate_responses(&CANMessage::new())[0];
         assert_eq!(0x01, response1.id);
@@ -114,12 +106,12 @@ mod tests {
 
     #[test]
     fn wait_behavior_waits_before_responding() {
-        let mut stub = Stub::from_str(r#"{
+        let mut stub = from_json(r#"{
                      "predicates": [],
                      "responses": [
                         { "id": "0x01", "data": [ "0x17" ], "_behaviors": [ { "wait": 50 } ] }
                       ]
-                   }"#).expect("");
+                   }"#);
 
         let start = Instant::now();
         stub.generate_responses(&CANMessage::new());
@@ -129,13 +121,13 @@ mod tests {
 
     #[test]
     fn repeat_behavior_repeats_a_message() {
-        let mut stub = Stub::from_str(r#"{
+        let mut stub = from_json(r#"{
                      "predicates": [],
                      "responses": [
                         { "id": "0x01", "data": [ "0x17" ], "_behaviors": [ { "repeat": 2 } ] },
                         { "id": "0x02", "data": [ "0x17" ] }
                       ]
-                   }"#).expect("");
+                   }"#);
 
         let response1 = stub.generate_responses(&CANMessage::new())[0];
         assert_eq!(0x01, response1.id);
@@ -149,13 +141,13 @@ mod tests {
 
     #[test]
     fn drop_behavior_drops_a_message() {
-        let mut stub = Stub::from_str(r#"{
+        let mut stub = from_json(r#"{
                      "predicates": [],
                      "responses": [
                         { "id": "0x01", "data": [], "_behaviors": [ { "drop": true } ] },
                         { "id": "0x02", "data": [] }
                       ]
-                   }"#).expect("");
+                   }"#);
 
         let responses = stub.generate_responses(&CANMessage::new());
         assert_eq!(0, responses.len());
@@ -165,7 +157,7 @@ mod tests {
 
     #[test]
     fn concat_behavior_concatenates_messages() {
-        let mut stub = Stub::from_str(r#"{
+        let mut stub = from_json(r#"{
                      "predicates": [],
                      "responses": [
                         { "id": "0x01", "data": [], "_behaviors": [ { "concat": true } ] },
@@ -173,7 +165,7 @@ mod tests {
                         { "id": "0x03", "data": [] },
                         { "id": "0x04", "data": [] }
                       ]
-                   }"#).expect("");
+                   }"#);
 
         let responses = stub.generate_responses(&CANMessage::new());
         assert_eq!(3, responses.len());
@@ -187,7 +179,7 @@ mod tests {
 
     #[test]
     fn repeat_and_concat_behaviors_can_be_combined() {
-        let mut stub = Stub::from_str(r#"{
+        let mut stub = from_json(r#"{
                      "predicates": [],
                      "responses": [
                         { "id": "0x01", "data": [], "_behaviors": [
@@ -197,7 +189,7 @@ mod tests {
                         { "id": "0x02", "data": [] },
                         { "id": "0x03", "data": [] }
                       ]
-                   }"#).expect("");
+                   }"#);
 
         let responses1 = stub.generate_responses(&CANMessage::new());
         assert_eq!(2, responses1.len());

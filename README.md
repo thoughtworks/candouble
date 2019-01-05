@@ -10,7 +10,7 @@ the Mountebank site:
 * [Mental Model](http://www.mbtest.org/docs/mentalModel)
 * [Stub](http://www.mbtest.org/docs/api/stubs)
 
-At the moment candouble can only load stubs from files. Like Mountebank it
+At the moment candouble can only load imposters from files. Like Mountebank it
 will get a REST interface to define stubs and verify interactions.
 
 
@@ -80,9 +80,17 @@ application with the `pcan` feature. For it to find the native library you
 have to set the dynamic library loading path:
 
     export LD_LIBRARY_PATH=./lib/PCBUSB
-    cargo run --features pcan tests/it_stubs.json
+    cargo run --features pcan tests/it_imposter.json
     
 If you're not on a Mac then you can run the unit tests, but there are no 
 adaptors yet for CAN hardware.
 
 
+## Web API Examples
+
+    curl -i -X POST -H 'Content-Type: application/json' http://localhost:8080/imposters --data '{ "id": 1, "stubs": [ { "predicates": [{ "eq": { "id": "0x200" } }], "responses": [{ "id": "0x201", "data": [ "0x01" ] }] } ] }'
+    
+    curl -i http://localhost:8080/imposters
+    
+    curl -i http://localhost:8080/imposters/1
+    
