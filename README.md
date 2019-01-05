@@ -10,7 +10,7 @@ the Mountebank site:
 * [Mental Model](http://www.mbtest.org/docs/mentalModel)
 * [Stub](http://www.mbtest.org/docs/api/stubs)
 
-At the moment candouble can only load stubs from files. Like Mountebank it
+At the moment candouble can only load imposters from files. Like Mountebank it
 will get a REST interface to define stubs and verify interactions.
 
 

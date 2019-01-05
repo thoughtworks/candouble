@@ -8,31 +8,17 @@ use crate::can::CANMessage;
 use crate::predicate::Predicate;
 use crate::response::{Behavior, ResponseTemplate};
 
-
-#[derive(Debug, Deserialize)]
-pub struct StubDefinition {
-    predicates: Vec<Predicate>,
-    responses: Vec<ResponseTemplate>,
-}
-
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Stub {
     predicates: Vec<Predicate>,
     responses: Vec<ResponseTemplate>,
+    #[serde(skip)]
     response_idx: usize,
+    #[serde(skip)]
     response_repeats: usize,
 }
 
 impl Stub {
-
-    pub fn new(def: StubDefinition) -> Stub {
-        Stub {
-            predicates: def.predicates,
-            responses: def.responses,
-            response_idx: 0,
-            response_repeats: 0
-        }
-    }
 
     pub fn matches_message(&self, message: &CANMessage) -> bool {
         self.predicates.iter().find(|p| p.eval(message) == false).is_none()
@@ -92,9 +78,12 @@ mod tests {
     use std::time::Instant;
     use crate::can::CANMessage;
     use super::*;
+    use crate::utils;
 
+    // this methods is only here to make the return type explicit,
+    // which in turn makes the tests a tiny bit more concise
     fn from_json(s: &str) -> Stub {
-        Stub::new(serde_json::from_str(s).expect("Failed to parse JSON"))
+        utils::from_json(s)
     }
 
     #[test]

@@ -1,13 +1,13 @@
 use std::borrow::BorrowMut;
 use std::fs::File;
-use std::io::{Error, Read};
+use std::io::Read;
 use std::sync::{Arc, Mutex};
 
 use gotham_derive::*;
 use serde_derive::*;
 
 use crate::can::{CANAdaptor, CANMessage, create_adaptor};
-use crate::stub::{Stub, StubDefinition};
+use crate::stub::Stub;
 use crate::utils;
 
 
@@ -45,14 +45,7 @@ impl ImposterList {
 }
 
 
-#[derive(Deserialize)]
-pub struct ImposterDefinition {
-    id: u32,
-    stubs: Vec<StubDefinition>,
-}
-
-
-#[derive(Clone, Serialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Imposter {
     pub id: u32,
     pub stubs: Vec<Stub>,
@@ -60,37 +53,17 @@ pub struct Imposter {
 
 
 impl Imposter {
-    pub fn new() -> Self {
-        Self { id: 0, stubs: Vec::new() }
-    }
 
     pub fn from_json(json: &str) -> Imposter {
-        let def: ImposterDefinition = utils::from_json(json);
-        let mut imposter = Imposter::new();
-        imposter.id = def.id;
-        for stub in def.stubs.into_iter() {
-            imposter.stubs.push(Stub::new(stub))
-        }
-        imposter
+        utils::from_json(json)
     }
 
     pub fn from_file(filename: &str) -> Imposter {
-        println!("Reading stub from file: {}", filename);
+        println!("Reading imposter from file: {}", filename);
         let mut file = File::open(filename).expect(&format!("Failed to open file {}", filename));
         let mut contents = String::new();
         file.read_to_string(&mut contents).expect(&format!("Failed to read file {}", filename));
         Imposter::from_json(&contents)
-    }
-
-    // TODO: only here to support loading individual stubs...
-    pub fn load_stub(&mut self, filename: &str) -> Result<(), Error> {
-        println!("Reading stub from file: {}", filename);
-        let mut file = File::open(filename).expect(&format!("Failed to open file {}", filename));
-        let mut contents = String::new();
-        file.read_to_string(&mut contents).expect(&format!("Failed to read file {}", filename));
-        let stub = Stub::new(utils::from_json(&contents));
-        self.stubs.push(stub);
-        Ok(())
     }
 
     pub fn run(&mut self) {
