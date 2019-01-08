@@ -39,6 +39,7 @@ pub fn router(imposters: ImposterList) -> Router {
         route.get("/imposters").to(get_all_imposters);
         route.get("/imposters/:id").with_path_extractor::<IdParam>().to(get_imposter);
         route.post("/imposters").to(post_imposter);
+        route.delete("/imposters/:id").with_path_extractor::<IdParam>().to(delete_imposter);
     })
 }
 
@@ -70,16 +71,29 @@ fn get_imposter(mut state: State) -> (State, Response<Body>) {
     (state, response)
 }
 
-
 fn post_imposter(mut state: State) -> Box<HandlerFuture> {
     let f = Body::take_from(&mut state).concat2().then(|full_body| {
         // TODO: consider adding explicit error handling
         let body_content = String::from_utf8(full_body.unwrap().to_vec()).unwrap();
         println!("Webapi: imposters << {}", utils::from_json::<Value>(&body_content));
         let imposter = Imposter::from_json(&body_content);
-        ImposterList::borrow_from(&state).upsert(imposter);
-        let response = create_empty_response(&state, StatusCode::CREATED);
+        let mut response = if ImposterList::borrow_from(&state).upsert(imposter) {
+            create_empty_response(&state, StatusCode::CREATED)
+        } else {
+            create_empty_response(&state, StatusCode::OK)
+        };
+        response.headers_mut().insert("Location", "http://not-implemented-yet".parse().unwrap());
         future::ok((state, response))
     });
     Box::new(f)
+}
+
+fn delete_imposter(mut state: State) -> (State, Response<Body>) {
+    let p = IdParam::take_from(&mut state);
+    let response = if ImposterList::borrow_from(&state).delete_by_id(p.id) {
+        create_empty_response(&state, StatusCode::NO_CONTENT)
+    } else {
+        create_empty_response(&state, StatusCode::NOT_FOUND)
+    };
+    (state, response)
 }

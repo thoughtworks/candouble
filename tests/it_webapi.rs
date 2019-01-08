@@ -18,12 +18,8 @@ fn client(imposter_list: ImposterList) -> TestClient {
     TestServer::new(webapi::router(imposter_list)).unwrap().client()
 }
 
-fn get(client: &TestClient, path: &str) -> TestResponse {
-    client.get(&format!("http://testhost{}", path)).perform().unwrap()
-}
-
-fn post(client: &TestClient, path: &str, body: String) -> TestResponse {
-    client.post(format!("http://testhost{}", path), body, mime::APPLICATION_JSON).perform().unwrap()
+fn url(path: &str) -> String {
+    format!("http://testhost{}", path)
 }
 
 fn as_json_obj(response: TestResponse) -> Map<String, Value> {
@@ -37,7 +33,7 @@ fn as_json_obj(response: TestResponse) -> Map<String, Value> {
 fn it_can_ping_api() {
     let client = client(ImposterList::new());
 
-    let response = get(&client, "/ping");
+    let response = client.get(&url("/ping")).perform().unwrap();
 
     assert_eq!(response.status(), 200);
     let obj = as_json_obj(response);
@@ -56,11 +52,26 @@ fn it_can_post_new_imposter() {
     let list = ImposterList::new();
     let client = client(list.clone());
 
-    let response = post(&client, "/imposters", doc.to_string());
+    let response = client.post(url("/imposters"), doc.to_string(), mime::APPLICATION_JSON).perform().unwrap();
 
     assert_eq!(201, response.status());
     assert_eq!(1, list.get_all().len());
 }
+
+#[test]
+fn it_can_post_to_update_imposter() {
+    let doc = r#"{ "id": 1, "stubs": [] }"#;
+    let list = ImposterList::new();
+    let client = client(list.clone());
+
+    client.post(url("/imposters"), doc.to_string(), mime::APPLICATION_JSON).perform().unwrap();
+    let response = client.post(url("/imposters"), doc.to_string(), mime::APPLICATION_JSON).perform().unwrap();
+
+    assert_eq!(200, response.status());
+//    assert_eq!(&format!("{}/1", url("/imposters")), response.headers().get("Location").unwrap());
+    assert_eq!(1, list.get_all().len());
+}
+
 
 #[test]
 fn it_can_get_all_imposters() {
@@ -69,7 +80,7 @@ fn it_can_get_all_imposters() {
     list.upsert(Imposter::from_json(r#"{ "id": 2, "stubs": [ ] }"#));
     let client = client(list.clone());
 
-    let response = get(&client, "/imposters");
+    let response = client.get(&url("/imposters")).perform().unwrap();
 
     assert_eq!(200, response.status());
     let obj = as_json_obj(response);
@@ -83,7 +94,7 @@ fn it_can_get_imposter_by_id() {
     list.upsert(Imposter::from_json(r#"{ "id": 3, "stubs": [ ] }"#));
     let client = client(list.clone());
 
-    let response = get(&client, "/imposters/3");
+    let response = client.get(&url("/imposters/3")).perform().unwrap();
 
     assert_eq!(200, response.status());
     let obj = as_json_obj(response);
@@ -97,7 +108,20 @@ fn it_returns_404_for_non_existing_imposter() {
     list.upsert(Imposter::from_json(r#"{ "id": 3, "stubs": [ ] }"#));
     let client = client(list.clone());
 
-    let response = get(&client, "/imposters/2");
+    let response = client.get(&url("/imposters/2")).perform().unwrap();
 
     assert_eq!(404, response.status());
+}
+
+
+#[test]
+fn it_can_delete_imposter_by_id() {
+    let list = ImposterList::new();
+    list.upsert(Imposter::from_json(r#"{ "id": 1, "stubs": [ ] }"#));
+    let client = client(list.clone());
+
+    let response = client.delete(&url("/imposters/1")).perform().unwrap();
+
+    assert_eq!(204, response.status());
+    assert_eq!(0, list.get_all().len());
 }

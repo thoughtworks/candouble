@@ -77,7 +77,7 @@ be described soon. For now, please have a look at the unit tests in
 
 ## Imposters
 
-The concept of an imposter is borrowed from Mountebank. In a nutshell an
+The concept of an imposter is borrowed from Mountebank. In a nutshell, an
 imposter is a collection of stubs that are active for a given CAN port.
 
 **At the moment Candouble only supports one CAN port, and its id is 0.**
@@ -87,7 +87,7 @@ imposter is a collection of stubs that are active for a given CAN port.
 An imposter specifies the port id and a list of stubs, e.g.
 
     {
-      "id": 123,
+      "id": 0,
       "stubs": [
         {
           "predicates": [
@@ -103,7 +103,7 @@ An imposter specifies the port id and a list of stubs, e.g.
 
 ## Web API (REST)
 
-The normal way to interact with Candouble is via its Web API. It allows
+The normal way to interact with Candouble is via its web API. It allows
 posting and retrieving of stubs. (An alternative is to specify files
 containing imposter definitions when starting Candouble.)
 
@@ -113,9 +113,11 @@ containing imposter definitions when starting Candouble.)
 Imposter definitions can be posted to the `/imposters` endpoint, e.g.
 
     curl -i -X POST -H 'Content-Type: application/json' http://localhost:8080/imposters ↩
-    --data '{ "id": 0, "stubs": [ { "predicates": [{ "eq": { "id": "0x200" } }], "responses": [{ "id": "0x201", "data": [ "0x01" ] }] } ] }'
+    --data '{ "id": 0, "stubs": [ { "predicates": [{ "eq": { "id": "0x01" } }], "responses": [{ "id": "0x02", "data": [ "0x01" ] }] } ] }'
 
-If an imposter with the given id exists already, it will be replaced.
+Unless something goes wrong, the API should respond with status code 
+`201 CREATED`. If an imposter with the given id exists already, that
+imposter will be replaced. In that case the response is  `200 OK`. 
 
 
 ### Retrieving a specific imposter
@@ -131,8 +133,19 @@ A list of all imposters can also be retrieved, e.g.
 
     curl -i http://localhost:8080/imposters
 
-The list of imposters is wrapped in a top-level object.
+The list of imposters is wrapped in a top-level object, e.g.
 
+    {
+      "imposters": [
+        {
+          "id": 0,
+          "stubs": [
+...
+          ]
+        }
+      ]
+    }
+    
 
 ### Removing an imposter
 
@@ -140,6 +153,9 @@ An imposter can be removed using the `DELETE` HTTP verb, e.g.
 
     curl -i -X DELETE http://localhost:8080/imposters/0
     
+Note that the API does not return the deleted imposter and 
+therefore responds with status code `204 NO CONTENT`.
+
 
 ## CAN hardware adaptors
 

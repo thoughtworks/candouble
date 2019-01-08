@@ -21,16 +21,30 @@ impl ImposterList {
         }
     }
 
-    pub fn upsert(&self, imposter: Imposter) {
+    pub fn upsert(&self, imposter: Imposter) -> bool {
+        let mut did_insert = true;
         let mut guard = self.inner.lock().unwrap();
         let list = guard.borrow_mut();
         for i in 0..(list.len()) {
             if list[i].id == imposter.id {
                 list.remove(i);
-                break;
+                did_insert = false;
             }
         }
         list.push(imposter);
+        did_insert
+    }
+
+    pub fn delete_by_id(&self, id: u32) -> bool {
+        let mut guard = self.inner.lock().unwrap();
+        let list = guard.borrow_mut();
+        for i in 0..(list.len()) {
+            if list[i].id == id {
+                list.remove(i);
+                return true;
+            }
+        }
+        false
     }
 
     pub fn get_all(&self) -> Vec<Imposter> {
@@ -74,8 +88,9 @@ pub fn run(imposter_files: Vec<String>) {
     });
 
     let cloned_list = list.clone();
+    let port_id = 0;
     let h = thread::spawn(move || {
-        imposter::run(0, cloned_list)
+        imposter::run(port_id, cloned_list)
     });
     h.join().unwrap();
 }
