@@ -69,6 +69,7 @@ fn it_can_post_to_update_imposter() {
 
     assert_eq!(200, response.status());
 //    assert_eq!(&format!("{}/1", url("/imposters")), response.headers().get("Location").unwrap());
+    assert_eq!("/imposters/1", response.headers().get("Location").unwrap());
     assert_eq!(1, list.get_all().len());
 }
 

@@ -9,7 +9,7 @@ use gotham::router::builder::*;
 use gotham::router::Router;
 use gotham::state::{FromState, State};
 use gotham_derive::*;
-use hyper::{Body, Response, StatusCode};
+use hyper::{Body, Response, StatusCode, Uri};
 use serde_derive::*;
 use serde_json::{Value, Error};
 
@@ -78,11 +78,9 @@ fn post_imposter(mut state: State) -> Box<HandlerFuture> {
             Ok(value) => {
                 println!("Webapi: imposters << {}", value);
                 let imposter = Imposter::from_json(&body_content);
-                if ImposterList::borrow_from(&state).upsert(imposter) {
-                    create_post_ok_response(&state, StatusCode::CREATED, "Created imposter")
-                } else {
-                    create_post_ok_response(&state, StatusCode::OK, "Updated imposter")
-                }
+                let id = imposter.id;
+                let did_create = ImposterList::borrow_from(&state).upsert(imposter);
+                create_post_ok_response(&state, id, did_create)
             }
             Err(error) => {
                 create_json_parse_error_response(&state, &error)
@@ -109,9 +107,14 @@ fn create_json_parse_error_response(state: &State, error: &Error) -> Response<Bo
     create_response(state, StatusCode::BAD_REQUEST, mime::TEXT_PLAIN, response_body)
 }
 
-fn create_post_ok_response(state: &State, status: StatusCode, message: &'static str) -> Response<Body> {
-    let response_body = format!("{}\n", message);
+fn create_post_ok_response(state: &State, id: u32, created: bool) -> Response<Body> {
+    let (status, response_body) = if created {
+        (StatusCode::CREATED, "Created imposter\n")
+    } else {
+        (StatusCode::OK, "Updated imposter\n")
+    };
     let mut response = create_response(state, status, mime::TEXT_PLAIN, response_body);
-    response.headers_mut().insert("Location", "http://not-implemented-yet".parse().unwrap());
+    let location = format!("{}/{}", Uri::borrow_from(&state), id);
+    response.headers_mut().insert("Location", location.parse().unwrap());
     response
 }

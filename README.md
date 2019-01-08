@@ -118,13 +118,17 @@ CREATED`. If an imposter with the given id exists already, that imposter will be
 replaced. In that case the response is  `200 OK`.
 
 
-
 ### Retrieving a specific imposter
 
 Imposters can be retrieved by their CAN port id, e.g.
 
     curl -i http://localhost:8080/imposters/0
     
+To allow following REST principles strictly, knowledge of this URL format is
+actually not necessary. The response to POSTing an imposter includes a
+`Location` header that contains the URL for the imposter. You can safely use 
+URLs with the format documented here, though.
+
     
 ### Retrieving all imposters
 
@@ -139,7 +143,9 @@ The list of imposters is wrapped in a top-level object, e.g.
         {
           "id": 0,
           "stubs": [
-...
+          
+            ...
+          
           ]
         }
       ]
