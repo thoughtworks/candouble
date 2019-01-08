@@ -18,12 +18,12 @@ impl CANAdaptor for DummyAdaptor {
         println!("DummyAdaptor: Waiting");
         thread::sleep(time::Duration::from_secs(5));
         let message = CANMessage::with_content(0x01, 0x01, &[0xCA, 0xFE]);
-        println!("DummyAdaptor: Pretending to receive message {}.", message);
+        println!("DummyAdaptor: Pretending to receive message {}", message);
         Ok(message)
     }
 
     fn send(&mut self, message: &CANMessage) -> Result<(), &'static str> {
-        println!("DummyAdaptor: Pretending to send message {}.", message);
+        println!("DummyAdaptor: Pretending to send message {}", message);
         Ok(())
     }
 }

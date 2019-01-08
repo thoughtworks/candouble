@@ -72,6 +72,18 @@ fn it_can_post_to_update_imposter() {
     assert_eq!(1, list.get_all().len());
 }
 
+#[test]
+fn it_returns_400_for_unparseable_json() {
+    let doc = r#"{ "id": 1"#;
+    let list = ImposterList::new();
+    let client = client(list.clone());
+
+    let response = client.post(url("/imposters"), doc.to_string(), mime::APPLICATION_JSON).perform().unwrap();
+
+    assert_eq!(400, response.status());
+    assert_eq!(0, list.get_all().len());
+}
+
 
 #[test]
 fn it_can_get_all_imposters() {
@@ -112,7 +124,6 @@ fn it_returns_404_for_non_existing_imposter() {
 
     assert_eq!(404, response.status());
 }
-
 
 #[test]
 fn it_can_delete_imposter_by_id() {

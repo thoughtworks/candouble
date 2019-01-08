@@ -1,6 +1,5 @@
 use crate::controller::ImposterList;
 use crate::imposter::Imposter;
-use crate::utils;
 use futures::{future, Future, Stream};
 use gotham::handler::HandlerFuture;
 use gotham::helpers::http::response::{create_empty_response, create_response};
@@ -12,7 +11,7 @@ use gotham::state::{FromState, State};
 use gotham_derive::*;
 use hyper::{Body, Response, StatusCode};
 use serde_derive::*;
-use serde_json::Value;
+use serde_json::{Value, Error};
 
 #[derive(Serialize, Clone)]
 struct ImposterListWrapper {
@@ -73,16 +72,22 @@ fn get_imposter(mut state: State) -> (State, Response<Body>) {
 
 fn post_imposter(mut state: State) -> Box<HandlerFuture> {
     let f = Body::take_from(&mut state).concat2().then(|full_body| {
-        // TODO: consider adding explicit error handling
+        // TODO: consider adding explicit error handling for body and UTF-8 problems
         let body_content = String::from_utf8(full_body.unwrap().to_vec()).unwrap();
-        println!("Webapi: imposters << {}", utils::from_json::<Value>(&body_content));
-        let imposter = Imposter::from_json(&body_content);
-        let mut response = if ImposterList::borrow_from(&state).upsert(imposter) {
-            create_empty_response(&state, StatusCode::CREATED)
-        } else {
-            create_empty_response(&state, StatusCode::OK)
+        let response = match serde_json::from_str::<Value>(&body_content) {
+            Ok(value) => {
+                println!("Webapi: imposters << {}", value);
+                let imposter = Imposter::from_json(&body_content);
+                if ImposterList::borrow_from(&state).upsert(imposter) {
+                    create_post_ok_response(&state, StatusCode::CREATED, "Created imposter")
+                } else {
+                    create_post_ok_response(&state, StatusCode::OK, "Updated imposter")
+                }
+            }
+            Err(error) => {
+                create_json_parse_error_response(&state, &error)
+            }
         };
-        response.headers_mut().insert("Location", "http://not-implemented-yet".parse().unwrap());
         future::ok((state, response))
     });
     Box::new(f)
@@ -96,4 +101,17 @@ fn delete_imposter(mut state: State) -> (State, Response<Body>) {
         create_empty_response(&state, StatusCode::NOT_FOUND)
     };
     (state, response)
+}
+
+
+fn create_json_parse_error_response(state: &State, error: &Error) -> Response<Body> {
+    let response_body = format!("Error parsing JSON document: {}\n", error);
+    create_response(state, StatusCode::BAD_REQUEST, mime::TEXT_PLAIN, response_body)
+}
+
+fn create_post_ok_response(state: &State, status: StatusCode, message: &'static str) -> Response<Body> {
+    let response_body = format!("{}\n", message);
+    let mut response = create_response(state, status, mime::TEXT_PLAIN, response_body);
+    response.headers_mut().insert("Location", "http://not-implemented-yet".parse().unwrap());
+    response
 }
