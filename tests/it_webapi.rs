@@ -9,7 +9,7 @@ use gotham::test::{TestClient, TestResponse, TestServer};
 use serde_json::{Map, Value};
 
 use candouble::imposter::Imposter;
-use candouble::imposter::ImposterList;
+use candouble::controller::ImposterList;
 use candouble::utils;
 use candouble::webapi;
 
@@ -65,8 +65,8 @@ fn it_can_post_new_imposter() {
 #[test]
 fn it_can_get_all_imposters() {
     let list = ImposterList::new();
-    list.add(Imposter::from_json(r#"{ "id": 1, "stubs": [ ] }"#));
-    list.add(Imposter::from_json(r#"{ "id": 2, "stubs": [ ] }"#));
+    list.upsert(Imposter::from_json(r#"{ "id": 1, "stubs": [ ] }"#));
+    list.upsert(Imposter::from_json(r#"{ "id": 2, "stubs": [ ] }"#));
     let client = client(list.clone());
 
     let response = get(&client, "/imposters");
@@ -79,8 +79,8 @@ fn it_can_get_all_imposters() {
 #[test]
 fn it_can_get_imposter_by_id() {
     let list = ImposterList::new();
-    list.add(Imposter::from_json(r#"{ "id": 1, "stubs": [ ] }"#));
-    list.add(Imposter::from_json(r#"{ "id": 3, "stubs": [ ] }"#));
+    list.upsert(Imposter::from_json(r#"{ "id": 1, "stubs": [ ] }"#));
+    list.upsert(Imposter::from_json(r#"{ "id": 3, "stubs": [ ] }"#));
     let client = client(list.clone());
 
     let response = get(&client, "/imposters/3");
@@ -93,8 +93,8 @@ fn it_can_get_imposter_by_id() {
 #[test]
 fn it_returns_404_for_non_existing_imposter() {
     let list = ImposterList::new();
-    list.add(Imposter::from_json(r#"{ "id": 1, "stubs": [ ] }"#));
-    list.add(Imposter::from_json(r#"{ "id": 3, "stubs": [ ] }"#));
+    list.upsert(Imposter::from_json(r#"{ "id": 1, "stubs": [ ] }"#));
+    list.upsert(Imposter::from_json(r#"{ "id": 3, "stubs": [ ] }"#));
     let client = client(list.clone());
 
     let response = get(&client, "/imposters/2");

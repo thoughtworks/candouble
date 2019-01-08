@@ -1,51 +1,16 @@
-use std::borrow::BorrowMut;
 use std::fs::File;
 use std::io::Read;
-use std::sync::{Arc, Mutex};
 
-use gotham_derive::*;
 use serde_derive::*;
 
-use crate::can::{CANAdaptor, CANMessage, create_adaptor};
+use crate::can::{CANMessage, create_adaptor};
+use crate::can::CANAdaptor;
+use crate::controller::ImposterList;
 use crate::stub::Stub;
 use crate::utils;
 
-
-#[derive(Clone, StateData)]
-pub struct ImposterList {
-    inner: Arc<Mutex<Vec<Imposter>>>,
-}
-
-impl ImposterList {
-
-    pub fn new()-> Self {
-        Self { inner: Arc::new(Mutex::new(Vec::new())) }
-    }
-
-    pub fn add(&self, imposter: Imposter) {
-        let mut guard = self.inner.lock().unwrap();
-        guard.borrow_mut().push(imposter);
-    }
-
-    pub fn get_by_id(&self, id: u32) -> Option<Imposter> {
-        let mut guard = self.inner.lock().unwrap();
-        for imposter in guard.borrow_mut().iter_mut() {
-            if imposter.id == id {
-                return Some(imposter.clone());
-            }
-        }
-        None
-    }
-
-    pub fn get_all(&self) -> Vec<Imposter> {
-        let mut guard = self.inner.lock().unwrap();
-        guard.borrow_mut().clone()
-    }
-
-}
-
-
-#[derive(Clone, Serialize, Deserialize)]
+// TODO: remove Debug
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Imposter {
     pub id: u32,
     pub stubs: Vec<Stub>,
@@ -66,23 +31,6 @@ impl Imposter {
         Imposter::from_json(&contents)
     }
 
-    pub fn run(&mut self) {
-        println!("Running an imposter with id {}...", self.id);
-        let mut adaptor = create_adaptor().expect("Failed to initialize CAN device.");
-        loop {
-            match adaptor.receive() {
-                Ok(message) => self.handle_message(adaptor.as_mut(), &message),
-                Err(errmsg) => { println!("Error: {}", errmsg); break; }
-            }
-        }
-    }
-
-    pub fn handle_message(&mut self, adaptor: &mut CANAdaptor, message: &CANMessage) {
-        for response in self.responses_to_message(&message) {
-            adaptor.send(&response).expect("Failed to send CAN message.");
-        }
-    }
-
     pub fn responses_to_message(&mut self, message: &CANMessage) -> Vec<CANMessage> {
         for i in 0..(self.stubs.len()) {
             let stub = &mut self.stubs[i];
@@ -90,7 +38,32 @@ impl Imposter {
                 return stub.generate_responses(message);
             }
         }
-        vec![]
+        Vec::new()
+    }
+}
+
+
+pub fn run(id: u32, list: ImposterList) {
+    let mut adaptor = create_adaptor().expect("Failed to initialize CAN device.");
+    run_with_adaptor(id, list, adaptor.as_mut());
+}
+
+// mostly extracted from above to allow for testing with mock from integration test
+pub fn run_with_adaptor(id: u32, mut list: ImposterList, adaptor: &mut CANAdaptor) {
+    loop {
+        match adaptor.receive() {
+            Ok(message) => {
+                list.do_with_imposter_by_id(id, |imposter| {
+                    for response in imposter.responses_to_message(&message) {
+                        adaptor.send(&response).expect("Failed to send CAN message.");
+                    }
+                });
+            }
+            Err(errmsg) => {
+                println!("Failed to receive CAN message: {}", errmsg);
+                break;
+            }
+        };
     }
 }
 

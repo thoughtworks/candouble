@@ -1,5 +1,5 @@
-use serde_json;
 use serde::Deserialize;
+use serde_json;
 
 pub fn num_from_string_u64(string: &str) -> u64 {
     if string.starts_with("0x") {

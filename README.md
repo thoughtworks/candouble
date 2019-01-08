@@ -3,18 +3,20 @@
 
 [![Build Status](https://api.travis-ci.org/thoughtworks/candouble.svg?branch=master)](https://travis-ci.org/thoughtworks/candouble)
 
-Conceptually candouble is very similar to Mountebank and we've tried to use 
+Conceptually Candouble is very similar to Mountebank and we've tried to use 
 the same terminoloy. It might be worthwhile to read the following pages on 
 the Mountebank site:
 
 * [Mental Model](http://www.mbtest.org/docs/mentalModel)
 * [Stub](http://www.mbtest.org/docs/api/stubs)
 
-At the moment candouble can only load imposters from files. Like Mountebank it
-will get a REST interface to define stubs and verify interactions.
+At the moment Candouble only supports stubs. It is not possible yet to verify
+past interactions.
 
 
-## Stub definition
+## Stubs
+
+### Definition
 
 A stub has a list of predicates and a list of responses, e.g.
 
@@ -28,8 +30,8 @@ A stub has a list of predicates and a list of responses, e.g.
         ]
     }
    
-When all predicates match an incoming message one response is sent. If 
-multiple responses are defined, candouble will cycle through the list of
+When all predicates match an incoming message a response is sent. If 
+multiple responses are defined, Candouble will cycle through the list of
 responses. 
  
 In the example, when a message is received that has `0x101` as its id then
@@ -39,13 +41,13 @@ second message matching the predicate is received candouble will send the
 second response, a message with `0x17, 0x20` as data bytes.
  
  
-## Stub evaluation
+### Evaluation
  
 The stubs are evaluated in the sequence they are defined in. The first
 stub that has a matching predicate will generate the response.
  
  
-## Predicates
+### Predicates
  
 Currently, candouble supports two predicate types only. (Therefore it's
 currently not too useful to define multiple predicates for one stub.)
@@ -58,7 +60,7 @@ allows to match on the id and data bytes. An asterisk can be used to
 match any value.
  
  
-## Responses
+### Responses
  
 Responses are sent as defined. A `_behaviors` attribute can be added to 
 the response definition. It is not sent but defines how the stub will send 
@@ -73,6 +75,72 @@ be described soon. For now, please have a look at the unit tests in
 `stub.rs`.
 
 
+## Imposters
+
+The concept of an imposter is borrowed from Mountebank. In a nutshell an
+imposter is a collection of stubs that are active for a given CAN port.
+
+**At the moment Candouble only supports one CAN port, and its id is 0.**
+
+### Definition
+
+An imposter specifies the port id and a list of stubs, e.g.
+
+    {
+      "id": 123,
+      "stubs": [
+        {
+          "predicates": [
+            { "eq": { "id": "0x0101" } },
+          ],
+          "responses": [
+            { "id": "0x0102", "data": ["0xCA", "0xFE"] }
+          ]
+        }
+      ]
+    }
+
+
+## Web API (REST)
+
+The normal way to interact with Candouble is via its Web API. It allows
+posting and retrieving of stubs. (An alternative is to specify files
+containing imposter definitions when starting Candouble.)
+
+
+### Adding and updating imposters
+
+Imposter definitions can be posted to the `/imposters` endpoint, e.g.
+
+    curl -i -X POST -H 'Content-Type: application/json' http://localhost:8080/imposters ↩
+    --data '{ "id": 0, "stubs": [ { "predicates": [{ "eq": { "id": "0x200" } }], "responses": [{ "id": "0x201", "data": [ "0x01" ] }] } ] }'
+
+If an imposter with the given id exists already, it will be replaced.
+
+
+### Retrieving a specific imposter
+
+Imposters can be retrieved by their CAN port id, e.g.
+
+    curl -i http://localhost:8080/imposters/0
+    
+    
+### Retrieving all imposters
+
+A list of all imposters can also be retrieved, e.g.
+
+    curl -i http://localhost:8080/imposters
+
+The list of imposters is wrapped in a top-level object.
+
+
+### Removing an imposter
+
+An imposter can be removed using the `DELETE` HTTP verb, e.g.
+
+    curl -i -X DELETE http://localhost:8080/imposters/0
+    
+
 ## CAN hardware adaptors
 
 If you're on a Mac and have the PCAN adaptor attached, you should run the
@@ -86,11 +154,3 @@ If you're not on a Mac then you can run the unit tests, but there are no
 adaptors yet for CAN hardware.
 
 
-## Web API Examples
-
-    curl -i -X POST -H 'Content-Type: application/json' http://localhost:8080/imposters --data '{ "id": 1, "stubs": [ { "predicates": [{ "eq": { "id": "0x200" } }], "responses": [{ "id": "0x201", "data": [ "0x01" ] }] } ] }'
-    
-    curl -i http://localhost:8080/imposters
-    
-    curl -i http://localhost:8080/imposters/1
-    

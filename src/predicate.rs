@@ -1,8 +1,9 @@
 use std::collections::HashMap;
+
 use serde_derive::*;
+
 use crate::can::CANMessage;
 use crate::utils;
-
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Predicate {
@@ -57,9 +58,10 @@ impl Predicate {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::utils;
     use crate::can::CANMessage;
+    use crate::utils;
+
+    use super::*;
 
     // this methods is only here to make the return type explicit,
     // which in turn makes the tests a tiny bit more concise

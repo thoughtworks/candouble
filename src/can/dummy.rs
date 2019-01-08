@@ -3,8 +3,7 @@ use core::time;
 use crate::can::{CANMessage, CANAdaptor};
 
 
-pub struct DummyAdaptor {
-}
+pub struct DummyAdaptor {}
 
 
 impl DummyAdaptor {
@@ -15,17 +14,18 @@ impl DummyAdaptor {
 
 
 impl CANAdaptor for DummyAdaptor {
-
-    fn receive(&self) -> Result<CANMessage, &'static str> {
-        println!("cannot receive message using dummy CANAdaptor; will sleep for one hour");
-        thread::sleep(time::Duration::from_secs(3600));
-        Err("cannot receive message using dummy CANAdaptor")
+    fn receive(&mut self) -> Result<CANMessage, &'static str> {
+        println!("DummyAdaptor: Waiting");
+        thread::sleep(time::Duration::from_secs(5));
+        let message = CANMessage::with_content(0x01, 0x01, &[0xCA, 0xFE]);
+        println!("DummyAdaptor: Pretending to receive message {}.", message);
+        Ok(message)
     }
 
-    fn send(&mut self, _message: &CANMessage) -> Result<(), &'static str> {
-        Err("cannot send message using dummy CANAdaptor")
+    fn send(&mut self, message: &CANMessage) -> Result<(), &'static str> {
+        println!("DummyAdaptor: Pretending to send message {}.", message);
+        Ok(())
     }
 }
-
 
 

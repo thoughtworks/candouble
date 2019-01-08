@@ -1,4 +1,5 @@
 use serde_derive::*;
+
 use crate::can::CANMessage;
 use crate::utils;
 
@@ -34,9 +35,10 @@ impl ResponseTemplate {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::utils::from_json;
     use crate::can::CANMessage;
+    use crate::utils::from_json;
+
+    use super::*;
 
     #[test]
     fn creates_response_with_hex_id_and_data_from_template() {

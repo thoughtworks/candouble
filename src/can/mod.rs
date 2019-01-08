@@ -46,7 +46,7 @@ impl fmt::Display for CANMessage {
 
 
 pub trait CANAdaptor {
-    fn receive(&self) -> Result<CANMessage, &'static str>;
+    fn receive(&mut self) -> Result<CANMessage, &'static str>;
     fn send(&mut self, message: &CANMessage) -> Result<(), &'static str>;
 }
 

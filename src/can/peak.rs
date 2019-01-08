@@ -57,7 +57,7 @@ impl PeakAdaptor {
 
 
 impl CANAdaptor for PeakAdaptor {
-    fn receive(&self) -> Result<CANMessage, &'static str> {
+    fn receive(&mut self) -> Result<CANMessage, &'static str> {
         let mut fds = self.get_fd_set();
         if unsafe { select(self.fd + 1, &mut fds, ptr::null_mut(), ptr::null_mut(), ptr::null_mut()) } == 0 {
             return Err("select returned 0 (timeout?)");
