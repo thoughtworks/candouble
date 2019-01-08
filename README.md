@@ -39,13 +39,6 @@ that this is CAN, a response can be up to 8 bytes long.) When a second message
 matching the predicate is received Candouble will send the second response, a
 message with `0x17, 0x20` as data bytes.
 
- 
- 
-### Evaluation
-
-The stubs are evaluated in the order they are defined in. The first stub that
-has a matching predicate will generate the response.
-
 
 ### Predicates
 
@@ -100,6 +93,11 @@ An imposter specifies the port id and a list of stubs, e.g.
         }
       ]
     }
+
+### Evaluation
+
+The stubs are evaluated in the order they are defined in. The first stub that
+has a matching predicate will generate the response.
 
 
 ## Web API (REST)
