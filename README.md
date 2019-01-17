@@ -59,15 +59,54 @@ match on the id and data bytes. An asterisk can be used to match any value.
 
 Responses are sent as defined. A `_behaviors` attribute can be added to the
 response definition. It is not sent but defines how the stub will send the
-response, e.g.
+response. Multiple behaviors can be combined.
+
+
+#### Wait behavior
+
+Instructs the stub to wait for a specified amount of time, in milliseconds, before sending the response, e.g.
 
     { "id": "0x01", "data": [ "0x17" ], "_behaviors": [ { "wait": 50 } ] }
 
-In this case the stub will wait for 50ms before sending the response.
+#### Repeat behavior
 
-Other possible behaviours are `repeat`, `drop`, and `concat`. They will be
-described soon. For now, please have a look at the unit tests in `stub.rs`.
+Instructs the stub to send a response a specified number of times before moving on to the next response in the list, e.g.
 
+    {
+        "predicates": [
+            { "eq": { "id": "0x01" } 
+        ],
+        "responses": [
+            { "id": "0xFF", "data": [ ], , "_behaviors": [ { "repeat": 2 } ] },
+            { "id": "0x02", "data": [ ] }
+        ]
+    }
+
+In this case the stub will respond to a sequence of incoming messages that have `0x01` as their id with a sequence of messages that have the following ids, in this order: `0xFF`, `0xFF`, `0x02`, `0xFF`, `0xFF`, ...
+
+#### Drop behavior
+
+Instructs the stub not to send the response. Note that some essential fields need to be defined even though they will not be used, e.g.
+
+	"responses": [
+		{ "id": "0x01", "data": [], "_behaviors": [ { "drop": true } ] },
+		{ "id": "0x02", "data": [] }
+	]
+
+The stub will basically ignore the first matching message and then respond with a message with id `0x02` to the second matching message.
+
+#### Concat behavior
+
+When a response has the `concat` behavior flag set, the following response will also be sent. This means that receiving a single message can result in the stub sending multiple messages, e.g.
+
+	"responses": [
+		{ "id": "0x01", "data": [], "_behaviors": [ { "concat": true } ] },
+		{ "id": "0x02", "data": [], "_behaviors": [ ] }
+    ]
+
+Here the imposter will respond to single matching incoming message with a sequence of two response messages.
+
+Note that when all defined responses have the `concat` flag set, then this would result in an endless stream of responses. Due to the way how Candouble is implemented, no response is sent and the imposter will hang in an endless loop.
 
 ## Imposters
 
