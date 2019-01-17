@@ -10,8 +10,11 @@ Mountebank site:
 * [Mental Model](http://www.mbtest.org/docs/mentalModel)
 * [Stub](http://www.mbtest.org/docs/api/stubs)
 
-At the moment Candouble only supports stubs. It is not possible yet to verify 
-past interactions.
+The central concept is a so called _imposter_ that is attached to a CAN port.
+The imposter has a list of stubs that specify how the imposter responds to
+incoming messages. In addition, the imposter can record incoming messages, and
+these are available for inspection via Candouble's Web API.
+
 
 
 ## Stubs
@@ -125,15 +128,16 @@ Imposters can be retrieved by their CAN port id, e.g.
     curl -i http://localhost:8080/imposters/0
 
 To allow following REST principles strictly, knowledge of this URL format is
-actually not necessary. The response to POSTing an imposter includes a
+not actually necessary. The response to POSTing an imposter includes a
 `Location` header that contains the URL for the imposter. That said, you can
 safely use URLs with the format documented here, though.
 
-The imposter response contains the definition of the imposter and all recorded
-messages, e.g.
+When the `recordMessages` field is set to `true`, the imposter records all
+incoming messages and these are then included in the response, e.g.
 
 	{
 	  "id": 0,
+	  "recordMessages": true,
 	  "stubs": [
 	    {
 	      "predicates": [
@@ -156,6 +160,8 @@ messages, e.g.
 	}
 
 Note that the `data` field of recorded messages always contains eight values.
+Also note that recording of messages is turned off by default, because this
+effectively represents a memory leak for long-running imposters.
 
 
 ### Retrieving all imposters
