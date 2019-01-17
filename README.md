@@ -77,7 +77,7 @@ Instructs the stub to send a response a specified number of times before moving 
             { "eq": { "id": "0x01" } 
         ],
         "responses": [
-            { "id": "0xFF", "data": [ ], , "_behaviors": [ { "repeat": 2 } ] },
+            { "id": "0xFF", "data": [ ], "_behaviors": [ { "repeat": 2 } ] },
             { "id": "0x02", "data": [ ] }
         ]
     }
@@ -169,7 +169,7 @@ Imposters can be retrieved by their CAN port id, e.g.
 To allow following REST principles strictly, knowledge of this URL format is
 not actually necessary. The response to POSTing an imposter includes a
 `Location` header that contains the URL for the imposter. That said, you can
-safely use URLs with the format documented here, though.
+safely use URLs with the format documented here.
 
 When the `recordMessages` field is set to `true`, the imposter records all
 incoming messages and these are then included in the response, e.g.
