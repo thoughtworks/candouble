@@ -24,7 +24,7 @@ impl ResponseTemplate {
     pub fn generate_response(&self, _message: &CANMessage) -> CANMessage {
         let mut response = CANMessage::new();
         response.id = utils::num_from_string_u64(&self.id);
-        response.len = self.data.len() as u8;
+        response.length = self.data.len() as u8;
         for i in 0..(self.data.len()) {
             response.data[i] = utils::num_from_string_u64(&self.data[i]) as u8;
         }
@@ -45,7 +45,7 @@ mod tests {
         let t: ResponseTemplate = from_json(r#"{ "id": "0x0102", "data": ["0x017", "0x03"] }"#);
         let response = t.generate_response(&CANMessage::new());
         assert_eq!(0x0102, response.id);
-        assert_eq!(2, response.len);
+        assert_eq!(2, response.length);
         assert_eq!(0x17, response.data[0]);
         assert_eq!(0x03, response.data[1]);
     }

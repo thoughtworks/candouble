@@ -45,7 +45,6 @@ message with `0x17, 0x20` as data bytes.
 Currently, Candouble supports two predicate types only. (Therefore it's
 currently not too useful to define multiple predicates for one stub.)
 
- 
      { "eq": { "id": "0x0101" }
      { "msg": { "id": "0x0101", "data": ["*", "0x02"] } 
  
@@ -58,7 +57,6 @@ match on the id and data bytes. An asterisk can be used to match any value.
 Responses are sent as defined. A `_behaviors` attribute can be added to the
 response definition. It is not sent but defines how the stub will send the
 response, e.g.
-
 
     { "id": "0x01", "data": [ "0x17" ], "_behaviors": [ { "wait": 50 } ] }
 
@@ -94,6 +92,7 @@ An imposter specifies the port id and a list of stubs, e.g.
       ]
     }
 
+
 ### Evaluation
 
 The stubs are evaluated in the order they are defined in. The first stub that
@@ -105,6 +104,7 @@ has a matching predicate will generate the response.
 The normal way to interact with Candouble is via its web API. It allows posting
 and retrieving of stubs. (An alternative is to specify files containing imposter
 definitions when starting Candouble.)
+
 
 ### Adding and updating imposters
 
@@ -123,13 +123,41 @@ replaced. In that case the response is  `200 OK`.
 Imposters can be retrieved by their CAN port id, e.g.
 
     curl -i http://localhost:8080/imposters/0
-    
+
 To allow following REST principles strictly, knowledge of this URL format is
 actually not necessary. The response to POSTing an imposter includes a
-`Location` header that contains the URL for the imposter. You can safely use 
-URLs with the format documented here, though.
+`Location` header that contains the URL for the imposter. That said, you can
+safely use URLs with the format documented here, though.
 
-    
+The imposter response contains the definition of the imposter and all recorded
+messages, e.g.
+
+	{
+	  "id": 0,
+	  "stubs": [
+	    {
+	      "predicates": [
+	        { "eq": { "id": "0x1" } }
+	      ],
+	      "responses": [
+	        { "id": "0x201", "data": [ "0x01" ], "_behaviors": null
+	        }
+	      ]
+	    }
+	  ],
+	  "messages": [
+	    {
+	      "id": 1,
+	      "type": 1,
+	      "length": 2,
+	      "data": [ 202, 254, 0, 0, 0, 0, 0, 0 ]
+	    }
+	  ]
+	}
+
+Note that the `data` field of recorded messages always contains eight values.
+
+
 ### Retrieving all imposters
 
 A list of all imposters can also be retrieved, e.g.
@@ -143,24 +171,21 @@ The list of imposters is wrapped in a top-level object, e.g.
         {
           "id": 0,
           "stubs": [
-          
-            ...
-          
+    ...
           ]
         }
       ]
-    }
-    
+    }    
+
 
 ### Removing an imposter
 
 An imposter can be removed using the `DELETE` HTTP verb, e.g.
 
     curl -i -X DELETE http://localhost:8080/imposters/0
-    
+
 Note that the API does not return the deleted imposter and therefore responds
 with status code `204 NO CONTENT`.
-
 
 
 ## CAN hardware adaptors
@@ -172,7 +197,7 @@ to set the dynamic library loading path:
 
     export LD_LIBRARY_PATH=./lib/PCBUSB
     cargo run --features pcan tests/it_imposter.json
-    
+
 If you're not on a Mac then you can run the unit tests, but there are no
 adaptors yet for CAN hardware.
 

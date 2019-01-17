@@ -10,6 +10,7 @@ use serde_json::{Map, Value};
 
 use candouble::imposter::Imposter;
 use candouble::controller::ImposterList;
+use candouble::can::CANMessage;
 use candouble::utils;
 use candouble::webapi;
 
@@ -115,6 +116,25 @@ fn it_can_get_imposter_by_id() {
 }
 
 #[test]
+fn it_imposter_contains_received_messages() {
+    let list = ImposterList::new();
+    let mut imposter = Imposter::from_json(r#"{ "id": 1, "stubs": [ ] }"#);
+    let message = CANMessage::with_content(0x200, 0, &[]);
+    imposter.responses_to_message(&message);
+    list.upsert(imposter);
+    let client = client(list.clone());
+
+    let response = client.get(&url("/imposters/1")).perform().unwrap();
+
+    let obj = as_json_obj(response);
+    let messages = obj.get("messages").unwrap();
+    assert_eq!(1, messages.as_array().unwrap().len());
+    let first_message = messages.get(0).unwrap();
+    assert_eq!(0x200, first_message.get("id").unwrap().as_i64().unwrap());
+}
+
+
+#[test]
 fn it_returns_404_for_non_existing_imposter() {
     let list = ImposterList::new();
     list.upsert(Imposter::from_json(r#"{ "id": 1, "stubs": [ ] }"#));
@@ -137,3 +157,4 @@ fn it_can_delete_imposter_by_id() {
     assert_eq!(204, response.status());
     assert_eq!(0, list.get_all().len());
 }
+

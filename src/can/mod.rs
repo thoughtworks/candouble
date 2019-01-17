@@ -1,4 +1,5 @@
 use std::{fmt, mem};
+use serde_derive::*;
 
 #[cfg(not(feature = "pcan"))]
 pub mod dummy;
@@ -9,11 +10,12 @@ pub mod pcbusb;
 
 
 #[repr(C)]  // TODO: this is here because of the Peak library; let's see what happens on Linux...
-#[derive(Copy, Clone, Debug)]
+#[derive(Debug, Copy, Clone, Serialize)]
 pub struct CANMessage {
     pub id: u64,  // TODO: this is u64 because of the Peak library...
+    #[serde(rename = "type")]
     pub message_type: u8,
-    pub len: u8,
+    pub length: u8,
     pub data: [u8; 8],
 }
 
@@ -26,7 +28,7 @@ impl CANMessage {
         let mut m = CANMessage::new();
         m.id = id;
         m.message_type = message_type;
-        m.len = data.len() as u8;
+        m.length = data.len() as u8;
         for i in 0..data.len() {
             m.data[i] = data[i];
         }
@@ -37,10 +39,10 @@ impl CANMessage {
 impl fmt::Display for CANMessage {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut data_str = String::new();
-        for i in 0..(self.len as usize) {
+        for i in 0..(self.length as usize) {
             data_str.push_str(&format!("{:02X} ", self.data[i]));
         }
-        write!(f, "ID:{:04X} LEN:{:1X} DATA: {}", self.id, self.len, data_str)
+        write!(f, "ID:{:04X} LEN:{:1X} DATA: {}", self.id, self.length, data_str)
     }
 }
 
@@ -72,7 +74,7 @@ mod tests {
 
         assert_eq!(0x101, m.id);
         assert_eq!(7, m.message_type);
-        assert_eq!(2, m.len);
+        assert_eq!(2, m.length);
         assert_eq!([0x20, 0x30, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], m.data);
     }
 }

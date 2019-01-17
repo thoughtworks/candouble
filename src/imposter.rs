@@ -14,6 +14,8 @@ use crate::utils;
 pub struct Imposter {
     pub id: u32,
     pub stubs: Vec<Stub>,
+    #[serde(skip_deserializing)]
+    pub messages: Vec<CANMessage>
 }
 
 
@@ -31,7 +33,12 @@ impl Imposter {
         Imposter::from_json(&contents)
     }
 
+    pub fn received_messages(&mut self) -> &Vec<CANMessage> {
+        &self.messages
+    }
+
     pub fn responses_to_message(&mut self, message: &CANMessage) -> Vec<CANMessage> {
+        self.messages.push(message.clone());
         for i in 0..(self.stubs.len()) {
             let stub = &mut self.stubs[i];
             if stub.matches_message(message) {
@@ -112,6 +119,19 @@ mod tests {
 
         assert_eq!(1, responses.len());
         assert_eq!(0x202, responses[0].id);
+    }
+
+    #[test]
+    fn records_received_messages() {
+        let mut imposter = Imposter::from_json(r#"{ "id": 0, "stubs": [] }"#);
+        let message = CANMessage::with_content(0x202, 0, &[ 0x00 ]);
+
+        imposter.responses_to_message(&message);
+
+        let received = imposter.received_messages();
+
+        assert_eq!(1, received.len());
+        assert_eq!(0x202, received[0].id);
     }
 
 }
