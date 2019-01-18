@@ -118,7 +118,7 @@ fn it_can_get_imposter_by_id() {
 #[test]
 fn it_imposter_contains_received_messages() {
     let list = ImposterList::new();
-    let mut imposter = Imposter::from_json(r#"{ "id": 1, "stubs": [ ] }"#);
+    let mut imposter = Imposter::from_json(r#"{ "id": 1, "recordMessages": true, "stubs": [ ] }"#);
     let message = CANMessage::with_content(0x200, 0, &[]);
     imposter.responses_to_message(&message);
     list.upsert(imposter);
