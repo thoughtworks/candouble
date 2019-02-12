@@ -2,7 +2,6 @@ use std::thread;
 use std::time::Duration;
 
 use serde_derive::*;
-use serde_json;
 
 use crate::can::CANMessage;
 use crate::predicate::Predicate;
