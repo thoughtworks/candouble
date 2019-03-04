@@ -1,7 +1,7 @@
 use std::{fmt, mem, ptr};
 use libc::{select, fd_set, FD_ZERO, FD_SET};
-use can::{CANMessage, CANAdaptor};
-use can::pcbusb::*;
+use crate::can::{CANMessage, CANAdaptor};
+use crate::can::pcbusb::*;
 
 
 impl CANTimestamp {

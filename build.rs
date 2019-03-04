@@ -1,7 +1,5 @@
-use std::env;
-
 fn main() -> std::io::Result<()> {
-    let path = env::current_dir()?;
-    println!("cargo:rustc-link-search={}/lib/PCBUSB", path.display());
+    #[cfg(feature="pcan")]
+    println!("cargo:rustc-link-search={}/lib/PCBUSB", std::env::current_dir()?.display());
     Ok(())
 }

@@ -1,4 +1,4 @@
-use can::CANMessage;
+use crate::can::CANMessage;
 
 
 /* functions defined in libPCBUSB, which we use on the Mac */

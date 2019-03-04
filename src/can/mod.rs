@@ -1,7 +1,7 @@
 use std::{fmt, mem};
 use serde_derive::*;
 
-#[cfg(not(feature = "pcan"))]
+#[cfg(feature = "dummy")]
 pub mod dummy;
 #[cfg(feature = "pcan")]
 pub mod peak;
@@ -58,7 +58,7 @@ pub fn create_adaptor() -> Result<Box<CANAdaptor>, &'static str> {
     self::peak::PeakAdaptor::new()
 }
 
-#[cfg(not(feature = "pcan"))]
+#[cfg(feature = "dummy")]
 pub fn create_adaptor() -> Result<Box<CANAdaptor>, &'static str> {
     self::dummy::DummyAdaptor::new()
 }

@@ -1,28 +1,4 @@
 
-# Candouble
-
-[![Build Status](https://api.travis-ci.org/thoughtworks/candouble.svg?branch=master)](https://travis-ci.org/thoughtworks/candouble)
-
-Conceptually Candouble is very similar to Mountebank and we've tried to use the 
-same terminology. It might be worthwhile to read the following pages on the 
-Mountebank site:
-
-* [Mental Model](http://www.mbtest.org/docs/mentalModel)
-* [Stub](http://www.mbtest.org/docs/api/stubs)
-
-The central concept is a so called _imposter_ that is attached to a CAN port.
-The imposter has a list of stubs that specify how the imposter responds to
-incoming messages. In addition, the imposter can record incoming messages, and
-these are available for inspection via Candouble's Web API.
-
-
-
-## Stubs
-
-### Definition
-
-A stub has a list of predicates and a list of responses, e.g.
-
     {
         "predicates": [
             { "eq": { "id": "0x0101" } 
@@ -162,6 +138,30 @@ replaced. In that case the response is  `200 OK`.
 
 ### Retrieving a specific imposter
 
+# Candouble
+
+[![Build Status](https://api.travis-ci.org/thoughtworks/candouble.svg?branch=master)](https://travis-ci.org/thoughtworks/candouble)
+
+Conceptually Candouble is very similar to Mountebank and we've tried to use the 
+same terminology. It might be worthwhile to read the following pages on the 
+Mountebank site:
+
+* [Mental Model](http://www.mbtest.org/docs/mentalModel)
+* [Stub](http://www.mbtest.org/docs/api/stubs)
+
+The central concept is a so called _imposter_ that is attached to a CAN port.
+The imposter has a list of stubs that specify how the imposter responds to
+incoming messages. In addition, the imposter can record incoming messages, and
+these are available for inspection via Candouble's Web API.
+
+
+
+## Stubs
+
+### Definition
+
+A stub has a list of predicates and a list of responses, e.g.
+
 Imposters can be retrieved by their CAN port id, e.g.
 
     curl -i http://localhost:8080/imposters/0
@@ -241,7 +241,7 @@ to set the dynamic library loading path:
 
 
     export LD_LIBRARY_PATH=./lib/PCBUSB
-    cargo run --features pcan tests/it_imposter.json
+    cargo run --no-default-features --features pcan tests/it_imposter.json
 
 If you're not on a Mac then you can run the unit tests, but there are no
 adaptors yet for CAN hardware.
